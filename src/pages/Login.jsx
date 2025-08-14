@@ -5,6 +5,8 @@ import { auth, db } from '../firebase';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import emailjs from 'emailjs-com';
+import { doc, getDoc } from 'firebase/firestore';
+
 
 const Login = () => {
   const [formData, setFormData] = useState({ email: '', password: '' });
@@ -68,51 +70,64 @@ const Login = () => {
     }));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    setSuccess('');
-    setLoginLoading(true);
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setError('');
+  setSuccess('');
+  setLoginLoading(true);
 
-    // Admin check
-    if (
-      formData.email === 'feedback.luckypaisa@gmail.com' &&
-      formData.password === 'LuckyPaisaAdmin786'
-    ) {
-      localStorage.setItem('isAdmin', 'true');
-      setSuccess('Admin login successful!');
-      setTimeout(() => navigate('/admin'), 1200);
-      setLoginLoading(false);
-      return;
+  console.clear();
+  console.log("=== LOGIN STARTED ===");
+  console.log("Email entered:", formData.email);
+
+  // Admin check
+  if (
+    formData.email === 'feedback.luckypaisa@gmail.com' &&
+    formData.password === 'LuckyPaisaAdmin786'
+  ) {
+    console.log("Admin login detected");
+    localStorage.setItem('isAdmin', 'true');
+    setSuccess('Admin login successful!');
+    setTimeout(() => navigate('/admin'), 1200);
+    setLoginLoading(false);
+    return;
+  }
+
+  try {
+    console.log("Attempting Firebase Auth sign-in...");
+    const userCred = await signInWithEmailAndPassword(
+      auth,
+      formData.email,
+      formData.password
+    );
+    const user = userCred.user;
+    console.log("Auth success:", user.uid, user.email);
+
+    console.log("Fetching Firestore user document by UID...");
+    const userDocRef = doc(db, 'users', user.uid);
+    const userSnap = await getDoc(userDocRef);
+
+    if (userSnap.exists()) {
+      console.log("Firestore user document found:", userSnap.data());
+      const userData = userSnap.data();
+      login({ uid: user.uid, ...userData });
+      localStorage.setItem('isAdmin', 'false');
+      setSuccess('Login successful!');
+      setTimeout(() => navigate('/home'), 1200);
+    } else {
+      console.warn("No Firestore document found for UID:", user.uid);
+      setError('User data not found in Firestore.');
     }
 
-    try {
-      const userCred = await signInWithEmailAndPassword(
-        auth,
-        formData.email,
-        formData.password
-      );
-      const user = userCred.user;
+  } catch (err) {
+    console.error("Firebase Auth error:", err.code, err.message);
+    setError(`Login failed: ${err.message}`);
+  } finally {
+    console.log("=== LOGIN ENDED ===");
+    setLoginLoading(false);
+  }
+};
 
-      const usersRef = collection(db, 'users');
-      const q = query(usersRef, where('email', '==', formData.email));
-      const snapshot = await getDocs(q);
-
-      if (!snapshot.empty) {
-        const userData = snapshot.docs[0].data();
-        login({ uid: user.uid, ...userData });
-        localStorage.setItem('isAdmin', 'false'); // Clear admin flag for normal users
-        setSuccess('Login successful!');
-        setTimeout(() => navigate('/home'), 1200);
-      } else {
-        setError('User data not found.');
-      }
-    } catch {
-      setError('Invalid email or password.');
-    } finally {
-      setLoginLoading(false);
-    }
-  };
 
   const handleForgotPassword = async () => {
     if (!modalEmail) return;
