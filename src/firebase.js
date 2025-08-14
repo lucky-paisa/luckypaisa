@@ -10,7 +10,7 @@ const firebaseConfig = {
   apiKey: "AIzaSyA8IF4ltR8kUXnuaTfKEU9sPeouJppuJeM",
   authDomain: "lucky-paisa-f6f1e.firebaseapp.com",
   projectId: "lucky-paisa-f6f1e",
-  storageBucket: "lucky-paisa-f6f1e.firebasestorage.app",
+  storageBucket: "lucky-paisa-f6f1e.appspot.com",
   messagingSenderId: "60995613666",
   appId: "1:60995613666:web:96ca76c1a2b90897fe3fbb"
 };

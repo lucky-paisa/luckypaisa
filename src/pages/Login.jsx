@@ -156,7 +156,8 @@ const Login = () => {
 
       {/* Typing Heading */}
       <div style={styles.typingWrapper}>
-        <h1 style={styles.typingStatic}>Welcome to Lucky Paisa,&nbsp;
+        <h1 style={styles.typingStatic}>Welcome to Lucky Paisa
+          <br/>
           <span style={styles.typingDynamic}>{typingText}</span>
           <span style={styles.cursor}>|</span>
         </h1>
@@ -308,7 +309,7 @@ const styles = {
     padding: '2rem',
     borderRadius: '15px',
     boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
-    width: '100%',
+    width: '85%',
     maxWidth: '360px'
   },
   title: {

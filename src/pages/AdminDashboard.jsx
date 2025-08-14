@@ -48,7 +48,7 @@ const AdminDashboard = () => {
 
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
       if (user) {
         setAdminEmail(user.email);
         setLoggedIn(true);
@@ -58,47 +58,42 @@ const AdminDashboard = () => {
       }
     });
 
-    // 🔹 Real-time listener for total earnings
+    // 🔹 Real-time total earnings
     const unsubscribeEarnings = onSnapshot(doc(db, "adminData", "earnings"), (docSnap) => {
-      if (docSnap.exists()) {
-        setTotalEarnings(docSnap.data().total || 0);
-      }
+      if (docSnap.exists()) setTotalEarnings(docSnap.data().total || 0);
     });
 
-        fetchMemberCounts();
+    fetchMemberCounts();
 
-        // 🔴 Real-time deposits
-        const unsubscribeDeposits = onSnapshot(collection(db, 'depositRequests'), (snapshot) => {
-          setDepositRequests(snapshot.docs.map(docSnap => ({
-            id: docSnap.id,
-            ...docSnap.data()
-          })));
-        });
+    // 🔴 Real-time deposits
+    const unsubscribeDeposits = onSnapshot(collection(db, 'depositRequests'), (snapshot) => {
+      setDepositRequests(snapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() })));
+    });
 
-        // 🔴 Real-time withdrawals
-        const unsubscribeWithdrawals = onSnapshot(collection(db, 'withdrawRequests'), (snapshot) => {
-          setWithdrawRequests(snapshot.docs.map(docSnap => ({
-            id: docSnap.id,
-            ...docSnap.data()
-          })));
-        });
+    // 🔴 Real-time withdrawals
+    const unsubscribeWithdrawals = onSnapshot(collection(db, 'withdrawRequests'), (snapshot) => {
+      setWithdrawRequests(snapshot.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() })));
+    });
 
+    // 🔔 Plan countdown listeners + intervals
+    const planUnsubs = [];
+    const intervalIds = [];
 
-  // Listen for plan countdown settings
-  ['plan_1', 'plan_2', 'plan_3'].forEach((planKey) => {
-    const planRef = doc(db, 'planSettings', planKey);
-    onSnapshot(planRef, (docSnap) => {
-      if (docSnap.exists()) {
+    ['plan_1', 'plan_2', 'plan_3'].forEach((planKey) => {
+      const planRef = doc(db, 'planSettings', planKey);
+      const unsub = onSnapshot(planRef, (docSnap) => {
+        if (!docSnap.exists()) return;
         const data = docSnap.data();
+        if (!data.startTime || !data.duration) return;
+
         const endTime = data.startTime.toDate().getTime() + (parseInt(data.duration) * 24 * 60 * 60 * 1000);
-        
+
         const updateCountdown = () => {
-          const now = new Date().getTime();
+          const now = Date.now();
           const distance = endTime - now;
           if (distance <= 0) {
-            setCountdowns(prev => ({ ...prev, [planKey]: '00:00:00:00' }));
+            setCountdowns(prev => ({ ...prev, [planKey]: '00d 00h 00m 00s' }));
             setCountdownFinishedPlans(prev => ({ ...prev, [planKey]: true }));
-            setPlanPrize(data.prizeAmount);
             return;
           }
           const days = Math.floor(distance / (1000 * 60 * 60 * 24));
@@ -109,36 +104,32 @@ const AdminDashboard = () => {
         };
 
         updateCountdown();
-        const interval = setInterval(updateCountdown, 1000);
-        return () => clearInterval(interval);
-      }
-    });
-  });
-
-      // 🔹 Listen for pools data
-    const unsubscribes = [];
-    poolsConfig.forEach(pool => {
-      const poolRef = collection(db, "pools", `pool_${pool.id}`, "users");
-      const unsub = onSnapshot(poolRef, (snap) => {
-        const users = snap.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() }));
-        setPoolsData(prev => ({
-          ...prev,
-          [`pool_${pool.id}`]: users
-        }));
+        const id = setInterval(updateCountdown, 1000);
+        intervalIds.push(id);
       });
-      unsubscribes.push(unsub);
+
+      planUnsubs.push(unsub);
     });
 
-      // ✅ Cleanup all listeners
+    // 🔹 Pools data listeners
+    const poolUnsubs = poolsConfig.map(pool => {
+      const poolRef = collection(db, "pools", `pool_${pool.id}`, "users");
+      return onSnapshot(poolRef, (snap) => {
+        const users = snap.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() }));
+        setPoolsData(prev => ({ ...prev, [`pool_${pool.id}`]: users }));
+      });
+    });
+
+    // ✅ Cleanup all listeners/timers
     return () => {
-      unsubscribe();                  // auth listener
-      unsubscribes.forEach(u => u()); // pools listeners
-      if (unsubscribeDeposits) unsubscribeDeposits();     // deposits listener
-      if (unsubscribeWithdrawals) unsubscribeWithdrawals(); // withdrawals listener
+      unsubscribeAuth();
+      unsubscribeEarnings();
+      unsubscribeDeposits();
+      unsubscribeWithdrawals();
+      planUnsubs.forEach(u => u());
+      poolUnsubs.forEach(u => u());
+      intervalIds.forEach(id => clearInterval(id));
     };
-
-
-    return () => unsubscribe();
   }, []);
 
   const fetchMemberCounts = async () => {
@@ -170,14 +161,13 @@ const AdminDashboard = () => {
   };
 
   const fetchApprovedPlans = async (planId) => {
-    const snapshot = await getDocs(collection(db, 'purchases'));
-    const list = [];
-    snapshot.forEach((docSnap) => {
-      const data = docSnap.data();
-      if (data.status === 'approved' && data.planId === planId) {
-        list.push({ id: docSnap.id, uid: data.uid, ...data });
-      }
-    });
+    const q = query(
+      collection(db, 'purchases'),
+      where('status', '==', 'approved'),
+      where('planId', '==', planId)
+    );
+    const snapshot = await getDocs(q);
+    const list = snapshot.docs.map(docSnap => ({ id: docSnap.id, uid: docSnap.data().uid, ...docSnap.data() }));
     setApprovedPlans(list);
     setSelectedPlanId(planId);
     setShowApprovedModal(true);
@@ -195,110 +185,76 @@ const AdminDashboard = () => {
     setLoading(false);
   };
 
-const handleProceed = async () => {
-  if (!selectedWinner) return;
+  const handleProceed = async () => {
+    if (!selectedWinner) return;
+    try {
+      setLoading(true);
+      const winnerUid = selectedWinner.uid;
+      const planId = selectedPlanId;
 
-  try {
-    setLoading(true);
-    const winnerUid = selectedWinner.uid; // Make sure your approvedPlans have uid field
-    const planId = selectedPlanId;
+      // 🔸 Get the current prize amount from the plan doc
+      const planRef = doc(db, "planSettings", `plan_${planId}`);
+      const planSnap = await getDoc(planRef);
+      const prizeAmt = Number(planSnap.data()?.prizeAmount || 0);
 
-    // 1️⃣ Update winner's wallet balance
-    const winnerRef = doc(db, "users", winnerUid);
-    const winnerSnap = await getDoc(winnerRef);
-    if (winnerSnap.exists()) {
-      const currentBalance = winnerSnap.data().wallet || 0;
-      await updateDoc(winnerRef, {
-        wallet: Number(currentBalance) + Number(planPrize)
-      });
-    } else {
-      await setDoc(winnerRef, {
-        wallet: parseFloat(planPrize),
-        createdAt: Timestamp.now()
-      });
-    }
-
-    // 2️⃣ Add announcements & remove plan from user's purchases array
-    for (const user of approvedPlans) {
-      const userRef = doc(db, "users", user.uid);
-      const userSnap = await getDoc(userRef);
-
-      const updatedPurchases = (userSnap.data()?.purchases || []).filter(
-        (purchase) => purchase.planId !== planId
-      );
-
-      if (user.uid === winnerUid) {
-      // Winner announcement
-      const winnerAnnouncement = `🏆 Congrats! ${selectedWinner.userName} won the Lucky Draw for ${getPlanName(planId)}! 🎉`;
-      
-      if (userSnap.exists()) {
-        await updateDoc(userRef, {
-          announcement: winnerAnnouncement,
-          announcementTimestamp: serverTimestamp(),
-          winnerAnnouncements: arrayUnion({
-            message: winnerAnnouncement,
-            timestamp: new Date()
-          }),
-          purchases: updatedPurchases,
-          // ⬅️ NEW: Add to planWins history
-          planWins: arrayUnion({
-            planName: getPlanName(planId),
-            amount: planPrize,
-            time: new Date().toISOString()
-          })
-        });
+      // 1) Credit winner
+      const winnerRef = doc(db, "users", winnerUid);
+      const winnerSnap = await getDoc(winnerRef);
+      if (winnerSnap.exists()) {
+        const currentBalance = Number(winnerSnap.data().wallet || 0);
+        await updateDoc(winnerRef, { wallet: currentBalance + prizeAmt });
       } else {
-        await setDoc(userRef, {
-          announcement: winnerAnnouncement,
-          announcementTimestamp: serverTimestamp(),
-          winnerAnnouncements: [{
-            message: winnerAnnouncement,
-            timestamp: serverTimestamp()
-          }],
-          purchases: updatedPurchases,
-          createdAt: Timestamp.now(),
-          // ⬅️ NEW: Add to planWins history
-          planWins: [{
-            planName: getPlanName(planId),
-            amount: planPrize,
-            time: new Date().toISOString()
-          }]
-        });
+        await setDoc(winnerRef, { wallet: prizeAmt, createdAt: Timestamp.now() });
       }
+
+      // 2) Notify & clear purchases for ALL participants (uniformly)
+      for (const user of approvedPlans) {
+        const userRef = doc(db, "users", user.uid);
+        const userSnap = await getDoc(userRef);
+        const currentPurchases = userSnap.data()?.purchases || [];
+        const updatedPurchases = currentPurchases.filter(p => p.planId !== planId);
+
+        if (user.uid === winnerUid) {
+          const winnerAnnouncement = `🏆 Congrats! ${selectedWinner.userName} won the Lucky Draw for ${getPlanName(planId)}! 🎉`;
+          await updateDoc(userRef, {
+            announcement: winnerAnnouncement,
+            announcementTimestamp: serverTimestamp(),
+            winnerAnnouncements: arrayUnion({
+              message: winnerAnnouncement,
+              timestamp: serverTimestamp()
+            }),
+            purchases: updatedPurchases,
+            planWins: arrayUnion({
+              planName: getPlanName(planId),
+              amount: prizeAmt,
+              time: new Date().toISOString()
+            })
+          });
+        } else {
+          // Non-winner: just clear the purchase
+          await updateDoc(userRef, { purchases: updatedPurchases });
+        }
+      }
+
+      // 3) Remove all purchases for this plan from the collection
+      const purchasesRef = collection(db, "purchases");
+      const purchasesQuery = query(purchasesRef, where("planId", "==", planId));
+      const purchasesSnap = await getDocs(purchasesQuery);
+      for (const purchaseDoc of purchasesSnap.docs) await deleteDoc(purchaseDoc.ref);
+
+      // 4) Restart countdown
+      await updateDoc(planRef, { startTime: Timestamp.now() });
+
+      // 5) Reset UI
+      setSelectedWinner(null);
+      setCountdownFinishedPlans(prev => ({ ...prev, [`plan_${planId}`]: false }));
+      fetchMemberCounts();
+    } catch (error) {
+      console.error("Error in handleProceed:", error);
+    } finally {
+      setLoading(false);
     }
-
-    }
-
-    // 3️⃣ Delete all purchase docs for this plan from "purchases" collection
-    const purchasesRef = collection(db, "purchases");
-    const purchasesQuery = query(purchasesRef, where("planId", "==", planId));
-    const purchasesSnap = await getDocs(purchasesQuery);
-    for (const purchaseDoc of purchasesSnap.docs) {
-      await deleteDoc(purchaseDoc.ref);
-    }
-
-    // 4️⃣ Restart countdown for this plan
-    const planRef = doc(db, "planSettings", `plan_${planId}`);
-    const planSnap = await getDoc(planRef);
-    if (planSnap.exists()) {
-      await updateDoc(planRef, {
-        startTime: Timestamp.now()
-      });
-    }
-
-    // 5️⃣ Reset states
-    setSelectedWinner(null);
-    setCountdownFinishedPlans(prev => ({ ...prev, [`plan_${planId}`]: false }));
-    fetchMemberCounts();
-
-    console.log(`✅ Lucky draw finalized for plan ${planId}`);
-  } catch (error) {
-    console.error("Error in handleProceed:", error);
-  }
-  finally{
-    setLoading(false);
-  }
-};
+  };
 
   const getPlanName = (planId) => {
     if (planId === 1) return 'Silver Plan';
@@ -497,7 +453,7 @@ const rewardUser = async (poolId, user) => {
 
       // Remove any matching pool purchase
       const updatedPurchases = (currentData.purchases || []).filter(
-        p => p.poolId !== poolId && `pool_${p.planId}` !== poolId
+        p => p.poolId !== poolId
       );
 
       await updateDoc(userRef, {
@@ -555,7 +511,7 @@ const rewardAll = async (poolId) => {
 
 
       const updatedPurchases = (currentData.purchases || []).filter(
-        p => p.poolId !== poolId && `pool_${p.planId}` !== poolId
+        p => p.poolId !== poolId 
       );
 
       await updateDoc(userRef, {
@@ -618,11 +574,16 @@ const rewardAll = async (poolId) => {
             <button
               style={{ marginTop: "5px", padding: "4px 8px", fontSize: "12px" }}
               onClick={async () => {
-                await updateDoc(doc(db, "adminData", "earnings"), { total: 0 });
+                try {
+                  await setDoc(doc(db, "adminData", "earnings"), { total: 0 }, { merge: true });
+                } catch (e) {
+                  console.error(e);
+                }
               }}
             >
               Reset
             </button>
+
           </div>
 
       <div className="admin-buttons">
