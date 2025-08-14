@@ -1,0 +1,78 @@
+/* Reset all browser defaults */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  border: none;
+}
+
+/* Full gradient background and scroll support */
+html, body {
+  width: 100% !important;
+  min-height: 100vh;
+  height: 100% !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;  /* ✅ Force scroll to work */
+  position: relative;
+  background: #0f2027; /* fallback */
+  background-image: linear-gradient(to right, #0f2027, #203a43, #2c5364);
+  font-family: sans-serif;
+  outline: none !important;
+  border: none !important;
+}
+
+/* #root should also allow scrolling */
+#root {
+  width: 100%;
+  min-height: 100vh;
+  overflow-x: hidden;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Optional: Logo animation styling */
+.logo {
+  height: 6em;
+  padding: 1.5em;
+  will-change: filter;
+  transition: filter 300ms;
+}
+.logo:hover {
+  filter: drop-shadow(0 0 2em #646cffaa);
+}
+.logo.react:hover {
+  filter: drop-shadow(0 0 2em #61dafbaa);
+}
+@keyframes logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  a:nth-of-type(2) .logo {
+    animation: logo-spin infinite 20s linear;
+  }
+}
+
+/* Optional: Card styles */
+.card {
+  padding: 2em;
+}
+
+.read-the-docs {
+  color: #888;
+}
+body {
+  overflow-y: auto !important;
+}
+body::-webkit-scrollbar {
+  width: 8px;
+}
+body::-webkit-scrollbar-thumb {
+  background-color: #888;
+  border-radius: 4px;
+}
