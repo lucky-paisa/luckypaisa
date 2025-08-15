@@ -4,8 +4,8 @@ import { collection, query, where, getDocs } from 'firebase/firestore';
 import { auth, db } from '../firebase';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import emailjs from 'emailjs-com';
 import { doc, getDoc } from 'firebase/firestore';
+import { sendPasswordResetEmail } from "firebase/auth";
 
 
 const Login = () => {
@@ -130,40 +130,23 @@ const handleSubmit = async (e) => {
 
 
   const handleForgotPassword = async () => {
-    if (!modalEmail) return;
-    setForgotLoading(true);
-    setError('');
-    try {
-      const usersRef = collection(db, 'users');
-      const q = query(usersRef, where('email', '==', modalEmail));
-      const snapshot = await getDocs(q);
-
-      if (snapshot.empty) {
-        setError('Account with this email does not exist.');
-      } else {
-        const userData = snapshot.docs[0].data();
-        const templateParams = {
-          to_name: userData.name || 'Lucky Paisa User',
-          to_email: userData.email,
-          message: userData.password,
-        };
-
-        await emailjs.send(
-          'service_yjw6c1d',
-          'template_e17te8m',
-          templateParams,
-          'qzoRhAcxsJhtRFLcm'
-        );
-
-        setSuccess('Password sent to your email. Please check SPAM folder');
-        setShowModal(false);
-      }
-    } catch (err) {
-      console.error(err);
-      setError('Failed to send password.');
+  if (!modalEmail) return;
+  setForgotLoading(true);
+  setError('');
+  try {
+    await sendPasswordResetEmail(auth, modalEmail);
+    setSuccess('Password reset email sent. Please check your inbox (and spam folder).');
+    setShowModal(false);
+  } catch (err) {
+    console.error("Error sending reset email:", err);
+    if (err.code === 'auth/user-not-found') {
+      setError('Account with this email does not exist.');
+    } else {
+      setError('Failed to send reset email.');
     }
-    setForgotLoading(false);
-  };
+  }
+  setForgotLoading(false);
+};
 
   return (
     <div style={styles.container}>
