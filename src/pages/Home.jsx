@@ -780,12 +780,11 @@ const planNameMap = {
         <div className="top-buttons">
           <button className="mainBtn" style={{borderRadius:'50px'}} onClick={() => setShowProfile(true)}>👤</button>
            <h1 className="welcome">
-           Welcome, <span style={{ color: '#ffd700' , fontSize: '25px' }}>{user.name}</span>
+           Welcome, <span style={{ color: '#ffd700' , fontSize: '25px' }}>{user?.name || "Guest"}</span>
         </h1>
            <img src='./src/assets/Logo.png' style={{width:'90px' , justifySelf:'center', display: 'flex',justifyContent: 'center', alignItems: 'center',}}></img> 
         </div>
         </div>
-
         <div className="announcement-wrap">
           <div className="marquee">
             <span>
