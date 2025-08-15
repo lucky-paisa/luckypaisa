@@ -121,7 +121,7 @@ const Login = () => {
 
     try {
       await sendPasswordResetEmail(auth, modalEmail);
-      setSuccess('Password reset link sent to your email. Please check your inbox or SPAM folder.');
+      setSuccess('Password reset link sent to email. Please check your inbox or SPAM folder.');
       setShowModal(false);
     } catch (err) {
       if (err.code === 'auth/user-not-found') {
@@ -140,12 +140,10 @@ const Login = () => {
     <div style={styles.container}>
       <div style={styles.overlay}></div>
 
-      {/* Typing Heading */}
-      <div style={styles.typingWrapper}>
-        <h1 style={styles.typingStatic}>Welcome to Lucky Paisa
-          <br/>
+      
             <div style={styles.card} className="fade-in">
-              <h2 style={styles.title}>Login to Your Account</h2>
+              <h2 style={styles.title}>Welcome back<br/>Login to your Account</h2>
+              <br/>
               {error && <p style={styles.error}>{error}</p>}
               {success && <p style={styles.success}>{success}</p>}
               <div style={styles.formWrapper}>
@@ -194,13 +192,9 @@ const Login = () => {
                   </button>
                 </form>
 
-                <button
-                  style={styles.forgotBtn}
-                  onClick={() => setShowModal(true)}
-                  disabled={forgotLoading}
-                >
-                  {forgotLoading ? 'Sending...' : 'Forgot Password?'}
-                </button>
+                <p style={styles.footerText}>
+                  <a style={{ color: '#60a5fa'}} onClick={() => setShowModal(true)}> Forgot Password? </a>
+                </p>
 
                 <p style={styles.footerText}>
                   Don’t have an account?{' '}
@@ -209,6 +203,9 @@ const Login = () => {
               </div>
             </div>
           <br/>
+          {/* Typing Heading */}
+      <div style={styles.typingWrapper}>
+        <h1 style={styles.typingStatic}>
           <span style={styles.typingDynamic}>{typingText}</span>
           <span style={styles.cursor}>|</span>
         </h1>
@@ -297,8 +294,9 @@ const styles = {
     padding: '2rem',
     borderRadius: '15px',
     boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
-    width: '80%',
-    maxWidth: '360px'
+    width: '85%',
+    maxWidth: '360px',
+    
   },
   title: {
     textAlign: 'center',
@@ -374,12 +372,14 @@ const styles = {
   error: {
     color: '#f87171',
     textAlign: 'center',
-    marginBottom: '1rem'
+    marginBottom: '1rem',
+    fontSize: '15px'
   },
   success: {
     color: '#34d399',
     textAlign: 'center',
-    marginBottom: '1rem'
+    marginBottom: '1rem',
+    fontSize: '15px'
   },
   footerText: {
     textAlign: 'center',
