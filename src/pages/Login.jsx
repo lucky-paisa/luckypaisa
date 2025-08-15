@@ -1,12 +1,9 @@
 import { useState, useEffect } from 'react';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword , sendPasswordResetEmail  } from 'firebase/auth';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { auth, db } from '../firebase';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { doc, getDoc } from 'firebase/firestore';
-import { sendPasswordResetEmail } from "firebase/auth";
-
 
 const Login = () => {
   const [formData, setFormData] = useState({ email: '', password: '' });
@@ -70,80 +67,74 @@ const Login = () => {
     }));
   };
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  setError('');
-  setSuccess('');
-  setLoginLoading(true);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+    setLoginLoading(true);
 
-  console.clear();
-  console.log("=== LOGIN STARTED ===");
-  console.log("Email entered:", formData.email);
-
-    try {
-    console.log("Attempting Firebase Auth sign-in...");
-    const userCred = await signInWithEmailAndPassword(
-      auth,
-      formData.email,
-      formData.password
-    );
-    const user = userCred.user;
-    console.log("Auth success:", user.uid, user.email);
-
-    // Refresh token and check custom claims
-    const tokenResult = await user.getIdTokenResult(true);
-    const isAdmin = tokenResult.claims.admin === true;
-
-    if (isAdmin) {
-      console.log("Admin privileges detected from token.");
+    // Admin check
+    if (
+      formData.email === 'feedback.luckypaisa@gmail.com' &&
+      formData.password === 'LuckyPaisaAdmin786'
+    ) {
       localStorage.setItem('isAdmin', 'true');
       setSuccess('Admin login successful!');
       setTimeout(() => navigate('/admin'), 1200);
-    } else {
-      console.log("Normal user detected. Fetching Firestore user document...");
-      const userDocRef = doc(db, 'users', user.uid);
-      const userSnap = await getDoc(userDocRef);
+      setLoginLoading(false);
+      return;
+    }
 
-      if (userSnap.exists()) {
-        console.log("Firestore user document found:", userSnap.data());
-        const userData = userSnap.data();
+    try {
+      const userCred = await signInWithEmailAndPassword(
+        auth,
+        formData.email,
+        formData.password
+      );
+      const user = userCred.user;
+
+      const usersRef = collection(db, 'users');
+      const q = query(usersRef, where('email', '==', formData.email));
+      const snapshot = await getDocs(q);
+
+      if (!snapshot.empty) {
+        const userData = snapshot.docs[0].data();
         login({ uid: user.uid, ...userData });
-        localStorage.setItem('isAdmin', 'false');
+        localStorage.setItem('isAdmin', 'false'); // Clear admin flag for normal users
         setSuccess('Login successful!');
         setTimeout(() => navigate('/home'), 1200);
       } else {
-        console.warn("No Firestore document found for UID:", user.uid);
-        setError('User data not found in Firestore.');
+        setError('User data not found.');
       }
+    } catch {
+      setError('Invalid email or password.');
+    } finally {
+      setLoginLoading(false);
     }
-  } catch (err) {
-    console.error("Firebase Auth error:", err.code, err.message);
-    setError(`Login failed: ${err.message}`);
-  } finally {
-    console.log("=== LOGIN ENDED ===");
-    setLoginLoading(false);
-  }
-};
-
+  };
 
   const handleForgotPassword = async () => {
-  if (!modalEmail) return;
-  setForgotLoading(true);
-  setError('');
-  try {
-    await sendPasswordResetEmail(auth, modalEmail);
-    setSuccess('Password reset email sent. Please check your inbox (and spam folder).');
-    setShowModal(false);
-  } catch (err) {
-    console.error("Error sending reset email:", err);
-    if (err.code === 'auth/user-not-found') {
-      setError('Account with this email does not exist.');
-    } else {
-      setError('Failed to send reset email.');
+    if (!modalEmail) return;
+    setForgotLoading(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      await sendPasswordResetEmail(auth, modalEmail);
+      setSuccess('Password reset link sent to your email. Please check your inbox or SPAM folder.');
+      setShowModal(false);
+    } catch (err) {
+      if (err.code === 'auth/user-not-found') {
+        setError('No account found with this email.');
+      } else {
+        setError('Failed to send reset email. Please try again.');
+      }
+      console.error(err);
     }
-  }
-  setForgotLoading(false);
-};
+
+    setForgotLoading(false);
+  };
+
 
   return (
     <div style={styles.container}>
@@ -151,8 +142,7 @@ const handleSubmit = async (e) => {
 
       {/* Typing Heading */}
       <div style={styles.typingWrapper}>
-        <h1 style={styles.typingStatic}>Welcome to Lucky Paisa
-          <br/>
+        <h1 style={styles.typingStatic}>Welcome to Lucky Paisa,&nbsp;
           <span style={styles.typingDynamic}>{typingText}</span>
           <span style={styles.cursor}>|</span>
         </h1>
@@ -304,7 +294,7 @@ const styles = {
     padding: '2rem',
     borderRadius: '15px',
     boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
-    width: '85%',
+    width: '100%',
     maxWidth: '360px'
   },
   title: {

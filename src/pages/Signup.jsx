@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc } from 'firebase/firestore';
 import { auth, db } from '../firebase';
 
 const Signup = () => {
@@ -51,7 +51,7 @@ const Signup = () => {
         name: formData.name,
         email: formData.email,
         phone: formData.phone,
-        joinedAt: serverTimestamp()
+        joinedAt: new Date(),
       });
 
       navigate('/login');

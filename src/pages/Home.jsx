@@ -1,9 +1,7 @@
 import './styles/Home.css';
 import { useAuth } from '../context/AuthContext';
-import { getIdTokenResult } from "firebase/auth";
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useState, useRef } from 'react';  
-
 import {
   doc,
   updateDoc,
@@ -18,14 +16,14 @@ import {
   setDoc,
   arrayUnion
 } from 'firebase/firestore';
-import {auth, db } from '../firebase';
-import Logo from '../assets/Logo.png';
+import { db } from '../firebase';
+
+
 
 const Home = () => {
   const { user, logout } = useAuth();
   const [planWins, setPlanWins] = useState([]);
   const [poolWins, setPoolWins] = useState([]);
-  const approvedPlanIdsRef = useRef(new Set()); // tracks which planIds we've already toasted for
   const navigate = useNavigate();
   const [wallet, setWallet] = useState(0);
   const [purchases, setPurchases] = useState([]);
@@ -55,13 +53,6 @@ const Home = () => {
   const [withdrawHistory, setWithdrawHistory] = useState([]);
   const [depositHistory, setDepositHistory] = useState([]);
   const [transactions, setTransactions] = useState([]);
-  // keep freshest copies to avoid stale closures in listeners
-  const latest = {
-    purchases: null,
-    pendingPlanIds: null,
-  };
-  useEffect(() => { latest.purchases = purchases; }, [purchases]);
-  useEffect(() => { latest.pendingPlanIds = pendingPlanIds; }, [pendingPlanIds]);
 
 useEffect(() => {
   if (!user || !user.uid) return;
@@ -120,18 +111,13 @@ useEffect(() => {
 
       // Filter to only last 24h & only silver/gold/diamond plans
       const filtered = data.winnerAnnouncements.filter(w => {
-        const raw = w.timestamp;
-        const ts = raw?.toDate?.() ? raw.toDate().getTime()
-                : raw instanceof Date ? raw.getTime()
-                : typeof raw === 'number' ? raw
-                : 0;
+        const ts = w.timestamp?.toDate?.()?.getTime?.() || 0;
         const msg = (w.message || "").toLowerCase();
         return (
           now - ts <= twentyFour &&
           (msg.includes("silver plan") || msg.includes("gold plan") || msg.includes("diamond plan"))
         );
       });
-
 
       if (filtered.length > 0) {
         // Convert to messages only
@@ -140,11 +126,7 @@ useEffect(() => {
         // Remove duplicates
         const uniqueMessages = [...new Set(winnerMessages)];
 
-        setAnnouncements(prev => {
-          const merged = [...new Set([...prev, ...uniqueMessages])];
-          return merged;
-        });
-
+        setAnnouncements(uniqueMessages);
 
         // If user hasn't seen the latest one, show modal alert
         const latest = filtered.sort((a, b) => 
@@ -176,58 +158,47 @@ useEffect(() => {
   });
 
 
- // ✅ Real-time listener for approved plans in 'purchases' collection
- // ✅ Real-time listener for approved plans in 'purchases' collection (deduped + fresh state)
+  // ✅ Real-time listener for approved plans in 'purchases' collection
 const purchasesRef = query(
   collection(db, 'purchases'),
   where('uid', '==', user.uid)
 );
 
 const unsubscribePurchases = onSnapshot(purchasesRef, async (querySnapshot) => {
-  // Build the full set from the server
-  const incoming = [];
+  const approvedPlans = [];
   querySnapshot.forEach((docSnap) => {
     const data = docSnap.data();
-    incoming.push({
-      planId: data.planId,
-      status: 'approved',
-      purchasedAt: data.approvedAt?.toDate?.()?.getTime?.() ?? Date.now(),
-      expiresAt: data.expiresAt ?? null
-    });
-  });
+    if (!purchases.some(p => p.planId === data.planId)) {
+      approvedPlans.push({
+        planId: data.planId,
+        status: 'approved',
+        purchasedAt: data.approvedAt || Date.now(),
+        expiresAt: data.expiresAt || null // 🆕 keep expiry if admin added it
+      });
 
-  // Merge into local state without duplicates using functional update
-  setPurchases((prev) => {
-    const byId = new Map(prev.map(p => [String(p.planId), p]));
-    for (const p of incoming) {
-      const key = String(p.planId);
-      // Prefer incoming fields but keep any existing not provided
-      byId.set(key, { ...byId.get(key), ...p });
     }
-    const merged = Array.from(byId.values());
-
-    // Sync back to user doc (best effort)
-    updateDoc(doc(db, 'users', user.uid), { purchases: merged }).catch(() => {});
-    return merged;
   });
 
-  // Remove any pending ids that just got approved
-  setPendingPlanIds((prev) =>
-    prev.filter(id => !incoming.some(p => String(p.planId) === String(id)))
-  );
+  if (approvedPlans.length > 0) {
+    // ✅ Add to local state
+    const updatedPurchases = [...purchases, ...approvedPlans];
+    setPurchases(updatedPurchases);
 
-  // Toast only for newly seen planIds during this session
-  const newlyApproved = incoming
-    .map(p => p.planId)
-    .filter(id => !approvedPlanIdsRef.current.has(String(id)));
+    // ✅ Update user's document (optional but recommended)
+    await updateDoc(doc(db, 'users', user.uid), {
+      purchases: updatedPurchases,
+    });
 
-  if (newlyApproved.length > 0) {
-    newlyApproved.forEach(id => approvedPlanIdsRef.current.add(String(id)));
-    showToast(`✅ Your Plan(s) ${newlyApproved.join(', ')} have been approved!`, 'success');
+    // ✅ Remove from pendingPlanIds
+    const newPending = pendingPlanIds.filter(id => !approvedPlans.find(p => p.planId === id));    
+    setPendingPlanIds(newPending);
+
+    // ✅ Show announcement
+    const planNames = approvedPlans.map(p => p.planId).join(', ');
+    showToast(`✅ Your Plan(s) ${planNames} have been approved!`, 'success');
+
   }
 });
-
-
 
   // Fetch pending plans once (not real-time)
   const fetchPendingPlans = async () => {
@@ -319,55 +290,39 @@ useEffect(() => {
 }, []);
 
   const handleWithdrawRequest = async () => {
-    // ✅ parse amount once and validate as a number
-    const amt = Number(withdrawAmount);
-
-    if (!userData?.walletAddress) {
-      showToast("Add your USDT (BEP-20) wallet address first.", "warning");
-      setShowAddressModal(true);
-      return;
-    }
-
-    if (!Number.isFinite(amt) || amt <= 0) {
+    if (!withdrawAmount || withdrawAmount <= 0) {
       showToast("Please enter a valid amount", "error");
       return;
     }
 
-    // ✅ require a saved wallet address
-    if (!userData?.walletAddress) {
-      showToast("Add your USDT (BEP-20) wallet address first.", "warning");
-      setShowAddressModal(true);
-      return;
-    }
-
-    const currentWallet = Number(userData?.wallet || 0);
-    if (amt > currentWallet) {
+    if (withdrawAmount > userData.wallet) {
       showToast("Insufficient balance", "error");
       return;
     }
 
     try {
       setLoading(true);
-      const oldBalance = currentWallet;
-      const newBalance = oldBalance - amt;
+      const oldBalance = userData.wallet;
+      const newBalance = oldBalance - withdrawAmount;
 
       // Create withdraw request document
       await addDoc(collection(db, "withdrawRequests"), {
-        uid: auth.currentUser.uid,
+        uid: user.uid,
         userName: userData.name || "Unknown",
         oldBalance,
-        amount: amt,                // ✅ store number
+        amount: withdrawAmount,
         newBalance,
         walletAddress: userData.walletAddress || "",
         status: "pending",
         createdAt: serverTimestamp()
       });
 
-      // Update wallet immediately + push to user's withdrawHistory
+      // Update wallet immediately
+      // 🆕 Push to user's withdrawHistory immediately
       await updateDoc(doc(db, 'users', user.uid), {
         wallet: newBalance,
-        withdrawHistory: arrayUnion({
-          amount: amt,             // ✅ store number
+          withdrawHistory: arrayUnion({
+          amount: withdrawAmount,
           status: 'Pending',
           time: new Date().toISOString()
         })
@@ -375,22 +330,23 @@ useEffect(() => {
 
       // Update local state
       setUserData(prev => ({ ...prev, wallet: newBalance }));
-      setWithdrawAmount("");       // ✅ reset ONCE
-
+      setWithdrawAmount(""); // reset input
+      setWithdrawAmount(""); // reset input
       setAlertModal({
         show: true,
         message: "✅ Your withdrawal request has been sent and will be approved within 24 hours.",
         isAnnouncement: false,
         timestamp: Date.now().toString()
       });
+
     } catch (error) {
       console.error("Error sending withdraw request:", error);
       showToast("Failed to send request", "error");
-    } finally {
+    }
+    finally{
       setLoading(false);
     }
   };
-
 
 
  const handleBuyWithWallet = async () => {
@@ -411,7 +367,7 @@ useEffect(() => {
 
   const newPurchase = {
     uid: user.uid,
-    userName: (userData?.name || user?.displayName || user?.email || ''),
+    userName: user.name || '',
     planId: selectedPlan.id,
     price: selectedPlan.price, // 🆕 store price directly
     days: selectedPlan.days,   // optional
@@ -562,16 +518,9 @@ useEffect(() => {
 
     try {
       if (isAnnouncement) {
-        const ackKey = `ackAnnouncement_${user.uid}`;
-        localStorage.setItem(ackKey, timestamp);
-
-      // Add this winner announcement to Firestore immediately
-        await updateDoc(userRef, {
-          winnerAnnouncements: arrayUnion({
-            message,
-            timestamp: new Date() // store as Timestamp
-          })
-        });
+        // user acknowledged the WINNER/NON-WINNER announcement
+        // store ack locally so it won't prompt again, and show in announcement bar
+        localStorage.setItem(`ackAnnouncement_${user.uid}`, timestamp);
 
         // Ensure the announcement bar displays it right away
         setAnnouncements(prev => {
@@ -592,25 +541,25 @@ useEffect(() => {
     }
   };
 
-// 📌 Cloudinary Upload Helper (uses Vite env vars)
-const uploadToCloudinary = async (file) => {
-  const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
-  const unsignedPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
-  if (!cloudName || !unsignedPreset) throw new Error("Cloudinary env vars missing");
 
+  // 📌 Cloudinary Upload Helper
+const uploadToCloudinary = async (file) => {
   const formData = new FormData();
   formData.append("file", file);
-  formData.append("upload_preset", unsignedPreset);
-  formData.append("cloud_name", cloudName);
+  formData.append("upload_preset", "lp_unsigned_deposits"); // your preset
+  formData.append("cloud_name", "dqjlufdxh"); // your cloud name
 
-  const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+  const res = await fetch("https://api.cloudinary.com/v1_1/dqjlufdxh/image/upload", {
     method: "POST",
-    body: formData,
+    body: formData
   });
 
-  if (!res.ok) throw new Error("Failed to upload image to Cloudinary");
+  if (!res.ok) {
+    throw new Error("Failed to upload image to Cloudinary");
+  }
+
   const data = await res.json();
-  return data.secure_url;
+  return data.secure_url; // Public HTTPS URL
 };
 
 
@@ -628,8 +577,8 @@ const uploadToCloudinary = async (file) => {
 
   // 2. Save deposit request in Firestore
   await addDoc(collection(db, 'depositRequests'), {
-    uid: auth.currentUser.uid,
-    userName: (userData?.name || user?.displayName || user?.email || ''),
+    uid: user.uid,
+    userName: user.name || '',
     email: user.email || '',
     amount: parseFloat(depositAmount),
     screenshotUrl, // Cloudinary public URL
@@ -672,29 +621,29 @@ const uploadToCloudinary = async (file) => {
 
 
 const handleSaveAddress = async () => {
-  const addr = (newAddress || "").trim();
+  if (!newAddress || newAddress.trim().length < 10) {
+    showToast("❌ Please enter a valid USDT BEP-20 address.", "error");
 
-  // ✅ strict BEP-20 (EVM) address check: 0x + 40 hex chars
-  const isBep20 = /^0x[a-fA-F0-9]{40}$/.test(addr);
-  if (!isBep20) {
-    showToast("❌ Please enter a valid USDT (BEP-20) address (0x + 40 hex).", "error");
     return;
   }
 
   try {
     const userRef = doc(db, "users", user.uid);
-    await updateDoc(userRef, { walletAddress: addr });
+    await updateDoc(userRef, {
+      walletAddress: newAddress.trim()
+    });
 
-    setWithdrawalAddress(addr);
+    setWithdrawalAddress(newAddress.trim());
     setNewAddress("");
     setShowAddressModal(false);
     showToast("✅ Withdrawal address updated successfully.", "success");
+
   } catch (error) {
     console.error("Error updating address:", error);
     showToast("❌ Failed to update address. Try again.", "error");
+
   }
 };
-
 
 const fetchWithdrawHistory = async () => {
   if (!user?.uid) return;
@@ -830,8 +779,10 @@ const planNameMap = {
       <div className="header" style={{display:'flex'}}>
         <div className="top-buttons">
           <button className="mainBtn" style={{borderRadius:'50px'}} onClick={() => setShowProfile(true)}>👤</button>
-           <h1 className="welcome">Welcome, <span style={{ color: '#ffd700' , fontSize: '25px' }}>{user?.name || "Guest"}</span></h1>
-           <img src={Logo} style={{width:'90px', justifySelf:'center', display:'flex', justifyContent:'center', alignItems:'center'}} />
+           <h1 className="welcome">
+           Welcome, <span style={{ color: '#ffd700' , fontSize: '25px' }}>{user.name}</span>
+        </h1>
+           <img src='./src/assets/Logo.png' style={{width:'90px' , justifySelf:'center', display: 'flex',justifyContent: 'center', alignItems: 'center',}}></img> 
         </div>
         </div>
 
@@ -903,7 +854,7 @@ const planNameMap = {
           className={`planCard plan-${plan.id}`}
           onClick={() => {
             if (pendingPlanIds.includes(plan.id)) {
-              showToast(`⏳ You already requested to buy Plan ${plan.id}... Will be approved within 12 hours.⏰.`, 'warning');
+              showToast(`⏳ You already requested to buy Plan ${plan.id}... Will be approvd within 12-hours⏰.`, 'warning');
               return;
             }
             const activePurchase = purchases.find(p => p.planId === plan.id);
@@ -980,12 +931,9 @@ const planNameMap = {
               type="number"
               className="input"
               placeholder="Enter amount"
-              min="1"
-              step="0.01"
               value={withdrawAmount}
               onChange={(e) => setWithdrawAmount(e.target.value)}
             />
-
             <button className="primaryBtn" onClick={handleWithdrawRequest} disabled={loading}>{loading ? 'Sending...' : 'Withdraw'}</button>
             <button className="cancelBtn" onClick={() => setShowWithdrawModal(false)}>Cancel</button>
           </div>
@@ -1000,7 +948,6 @@ const planNameMap = {
               className="input"
               type="text"
               placeholder="0x..."
-              autoComplete="off"
               value={newAddress}
               onChange={(e) => setNewAddress(e.target.value)}
             />
