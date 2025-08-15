@@ -142,76 +142,79 @@ const Login = () => {
 
       {/* Typing Heading */}
       <div style={styles.typingWrapper}>
-        <h1 style={styles.typingStatic}>Welcome to Lucky Paisa,&nbsp;
+        <h1 style={styles.typingStatic}>Welcome to Lucky Paisa
+          <br/>
+            <div style={styles.card} className="fade-in">
+              <h2 style={styles.title}>Login to Your Account</h2>
+              {error && <p style={styles.error}>{error}</p>}
+              {success && <p style={styles.success}>{success}</p>}
+              <div style={styles.formWrapper}>
+                <form onSubmit={handleSubmit} style={styles.form}>
+                  <div style={styles.floatingGroup}>
+                    <input
+                      type="email"
+                      name="email"
+                      value={formData.email}
+                      onChange={handleChange}
+                      onFocus={() => setEmailFocused(true)}
+                      onBlur={() => setEmailFocused(false)}
+                      required
+                      style={styles.floatingInput}
+                    />
+                    {!(formData.email || emailFocused) && (
+                      <label style={styles.floatingLabel}>Email</label>
+                    )}
+                  </div>
+
+                  <div style={styles.floatingGroup}>
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      name="password"
+                      value={formData.password}
+                      onChange={handleChange}
+                      onFocus={() => setPasswordFocused(true)}
+                      onBlur={() => setPasswordFocused(false)}
+                      required
+                      style={styles.floatingInput}
+                    />
+                    {!(formData.password || passwordFocused) && (
+                      <label style={styles.floatingLabel}>Password</label>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      style={styles.toggleBtn}
+                    >
+                      {showPassword ? '👁' : '⌣'}
+                    </button>
+                  </div>
+
+                  <button type="submit" style={styles.button} disabled={loginLoading}>
+                    {loginLoading ? 'Logging in...' : 'Login'}
+                  </button>
+                </form>
+
+                <button
+                  style={styles.forgotBtn}
+                  onClick={() => setShowModal(true)}
+                  disabled={forgotLoading}
+                >
+                  {forgotLoading ? 'Sending...' : 'Forgot Password?'}
+                </button>
+
+                <p style={styles.footerText}>
+                  Don’t have an account?{' '}
+                  <a href="/signup" style={{ color: '#60a5fa' }}>Sign Up</a>
+                </p>
+              </div>
+            </div>
+          <br/>
           <span style={styles.typingDynamic}>{typingText}</span>
           <span style={styles.cursor}>|</span>
         </h1>
       </div>
 
-      <div style={styles.card} className="fade-in">
-        <h2 style={styles.title}>Login to Your Account</h2>
-        {error && <p style={styles.error}>{error}</p>}
-        {success && <p style={styles.success}>{success}</p>}
-        <div style={styles.formWrapper}>
-          <form onSubmit={handleSubmit} style={styles.form}>
-            <div style={styles.floatingGroup}>
-              <input
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                onFocus={() => setEmailFocused(true)}
-                onBlur={() => setEmailFocused(false)}
-                required
-                style={styles.floatingInput}
-              />
-              {!(formData.email || emailFocused) && (
-                <label style={styles.floatingLabel}>Email</label>
-              )}
-            </div>
-
-            <div style={styles.floatingGroup}>
-              <input
-                type={showPassword ? 'text' : 'password'}
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                onFocus={() => setPasswordFocused(true)}
-                onBlur={() => setPasswordFocused(false)}
-                required
-                style={styles.floatingInput}
-              />
-              {!(formData.password || passwordFocused) && (
-                <label style={styles.floatingLabel}>Password</label>
-              )}
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                style={styles.toggleBtn}
-              >
-                {showPassword ? '👁' : '⌣'}
-              </button>
-            </div>
-
-            <button type="submit" style={styles.button} disabled={loginLoading}>
-              {loginLoading ? 'Logging in...' : 'Login'}
-            </button>
-          </form>
-
-          <button
-            style={styles.forgotBtn}
-            onClick={() => setShowModal(true)}
-            disabled={forgotLoading}
-          >
-            {forgotLoading ? 'Sending...' : 'Forgot Password?'}
-          </button>
-
-          <p style={styles.footerText}>
-            Don’t have an account?{' '}
-            <a href="/signup" style={{ color: '#60a5fa' }}>Sign Up</a>
-          </p>
-        </div>
-      </div>
+      
 
       {/* Modal */}
       {showModal && (
@@ -294,7 +297,7 @@ const styles = {
     padding: '2rem',
     borderRadius: '15px',
     boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
-    width: '100%',
+    width: '80%',
     maxWidth: '360px'
   },
   title: {
