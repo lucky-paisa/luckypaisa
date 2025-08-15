@@ -1,7 +1,9 @@
 import './styles/Home.css';
 import { useAuth } from '../context/AuthContext';
+import { getIdTokenResult } from "firebase/auth";
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useState, useRef } from 'react';  
+
 import {
   doc,
   updateDoc,
@@ -16,10 +18,8 @@ import {
   setDoc,
   arrayUnion
 } from 'firebase/firestore';
-import { db } from '../firebase';
+import {auth, db } from '../firebase';
 import Logo from '../assets/Logo.png';
-
-
 
 const Home = () => {
   const { user, logout } = useAuth();
@@ -140,7 +140,11 @@ useEffect(() => {
         // Remove duplicates
         const uniqueMessages = [...new Set(winnerMessages)];
 
-        setAnnouncements(uniqueMessages);
+        setAnnouncements(prev => {
+          const merged = [...new Set([...prev, ...uniqueMessages])];
+          return merged;
+        });
+
 
         // If user hasn't seen the latest one, show modal alert
         const latest = filtered.sort((a, b) => 
@@ -349,7 +353,7 @@ useEffect(() => {
 
       // Create withdraw request document
       await addDoc(collection(db, "withdrawRequests"), {
-        uid: user.uid,
+        uid: auth.currentUser.uid,
         userName: userData.name || "Unknown",
         oldBalance,
         amount: amt,                // ✅ store number
@@ -558,9 +562,16 @@ useEffect(() => {
 
     try {
       if (isAnnouncement) {
-        // user acknowledged the WINNER/NON-WINNER announcement
-        // store ack locally so it won't prompt again, and show in announcement bar
-        localStorage.setItem(`ackAnnouncement_${user.uid}`, timestamp);
+        const ackKey = `ackAnnouncement_${user.uid}`;
+        localStorage.setItem(ackKey, timestamp);
+
+      // Add this winner announcement to Firestore immediately
+        await updateDoc(userRef, {
+          winnerAnnouncements: arrayUnion({
+            message,
+            timestamp: new Date() // store as Timestamp
+          })
+        });
 
         // Ensure the announcement bar displays it right away
         setAnnouncements(prev => {
@@ -617,7 +628,7 @@ const uploadToCloudinary = async (file) => {
 
   // 2. Save deposit request in Firestore
   await addDoc(collection(db, 'depositRequests'), {
-    uid: user.uid,
+    uid: auth.currentUser.uid,
     userName: (userData?.name || user?.displayName || user?.email || ''),
     email: user.email || '',
     amount: parseFloat(depositAmount),
@@ -819,9 +830,7 @@ const planNameMap = {
       <div className="header" style={{display:'flex'}}>
         <div className="top-buttons">
           <button className="mainBtn" style={{borderRadius:'50px'}} onClick={() => setShowProfile(true)}>👤</button>
-           <h1 className="welcome">
-           Welcome, <span style={{ color: '#ffd700' , fontSize: '25px' }}>{user.name}</span>
-        </h1>
+           <h1 className="welcome">Welcome, <span style={{ color: '#ffd700' , fontSize: '25px' }}>{user?.name || "Guest"}</span></h1>
            <img src={Logo} style={{width:'90px', justifySelf:'center', display:'flex', justifyContent:'center', alignItems:'center'}} />
         </div>
         </div>

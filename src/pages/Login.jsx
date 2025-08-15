@@ -80,20 +80,7 @@ const handleSubmit = async (e) => {
   console.log("=== LOGIN STARTED ===");
   console.log("Email entered:", formData.email);
 
-  // Admin check
-  if (
-    formData.email === 'feedback.luckypaisa@gmail.com' &&
-    formData.password === 'LuckyPaisaAdmin786'
-  ) {
-    console.log("Admin login detected");
-    localStorage.setItem('isAdmin', 'true');
-    setSuccess('Admin login successful!');
-    setTimeout(() => navigate('/admin'), 1200);
-    setLoginLoading(false);
-    return;
-  }
-
-  try {
+    try {
     console.log("Attempting Firebase Auth sign-in...");
     const userCred = await signInWithEmailAndPassword(
       auth,
@@ -103,22 +90,32 @@ const handleSubmit = async (e) => {
     const user = userCred.user;
     console.log("Auth success:", user.uid, user.email);
 
-    console.log("Fetching Firestore user document by UID...");
-    const userDocRef = doc(db, 'users', user.uid);
-    const userSnap = await getDoc(userDocRef);
+    // Refresh token and check custom claims
+    const tokenResult = await user.getIdTokenResult(true);
+    const isAdmin = tokenResult.claims.admin === true;
 
-    if (userSnap.exists()) {
-      console.log("Firestore user document found:", userSnap.data());
-      const userData = userSnap.data();
-      login({ uid: user.uid, ...userData });
-      localStorage.setItem('isAdmin', 'false');
-      setSuccess('Login successful!');
-      setTimeout(() => navigate('/home'), 1200);
+    if (isAdmin) {
+      console.log("Admin privileges detected from token.");
+      localStorage.setItem('isAdmin', 'true');
+      setSuccess('Admin login successful!');
+      setTimeout(() => navigate('/admin'), 1200);
     } else {
-      console.warn("No Firestore document found for UID:", user.uid);
-      setError('User data not found in Firestore.');
-    }
+      console.log("Normal user detected. Fetching Firestore user document...");
+      const userDocRef = doc(db, 'users', user.uid);
+      const userSnap = await getDoc(userDocRef);
 
+      if (userSnap.exists()) {
+        console.log("Firestore user document found:", userSnap.data());
+        const userData = userSnap.data();
+        login({ uid: user.uid, ...userData });
+        localStorage.setItem('isAdmin', 'false');
+        setSuccess('Login successful!');
+        setTimeout(() => navigate('/home'), 1200);
+      } else {
+        console.warn("No Firestore document found for UID:", user.uid);
+        setError('User data not found in Firestore.');
+      }
+    }
   } catch (err) {
     console.error("Firebase Auth error:", err.code, err.message);
     setError(`Login failed: ${err.message}`);

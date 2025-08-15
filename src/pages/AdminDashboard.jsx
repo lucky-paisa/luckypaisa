@@ -221,8 +221,8 @@ const AdminDashboard = () => {
             announcementTimestamp: serverTimestamp(),
             winnerAnnouncements: arrayUnion({
               message: winnerAnnouncement,
-              timestamp: serverTimestamp()
-            }),
+              timestamp: new Date().toISOString() }),
+            announcementTimestamp: serverTimestamp(),
             purchases: updatedPurchases,
             planWins: arrayUnion({
               planName: getPlanName(planId),
