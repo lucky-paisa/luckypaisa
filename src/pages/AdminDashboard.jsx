@@ -7,16 +7,10 @@ import { useNavigate } from 'react-router-dom';
 
 // Add after your existing imports
 const poolsConfig = [
-  { id: 1, price: 10, reward: 30 },
-  { id: 2, price: 20, reward: 60 },
-  { id: 3, price: 30, reward: 90 },
-  { id: 4, price: 50, reward: 150 },
-  { id: 5, price: 70, reward: 210 },
-  { id: 6, price: 90, reward: 270 },
-  { id: 7, price: 100, reward: 300 },
-  { id: 8, price: 150, reward: 450 },
-  { id: 9, price: 200, reward: 600 },
-  { id: 10, price: 250, reward: 750 }
+  { id: 1, price: 50, reward: 1 },
+  { id: 2, price: 100, reward: 2.5 },
+  { id: 3, price: 200, reward: 5.5 },
+  { id: 4, price: 300, reward: 8.5 }
 ];
 
 
@@ -195,110 +189,131 @@ const AdminDashboard = () => {
     setLoading(false);
   };
 
-const handleProceed = async () => {
-  if (!selectedWinner) return;
+  const handleProceed = async () => {
+    if (!selectedWinner) return;
 
-  try {
-    setLoading(true);
-    const winnerUid = selectedWinner.uid; // Make sure your approvedPlans have uid field
-    const planId = selectedPlanId;
+    try {
+      setLoading(true);
+      const winnerUid = selectedWinner.uid;
+      const planId = selectedPlanId;
 
-    // 1️⃣ Update winner's wallet balance
-    const winnerRef = doc(db, "users", winnerUid);
-    const winnerSnap = await getDoc(winnerRef);
-    if (winnerSnap.exists()) {
-      const currentBalance = winnerSnap.data().wallet || 0;
-      await updateDoc(winnerRef, {
-        wallet: Number(currentBalance) + Number(planPrize)
-      });
-    } else {
-      await setDoc(winnerRef, {
-        wallet: parseFloat(planPrize),
-        createdAt: Timestamp.now()
-      });
-    }
+      // 🔹 Fetch prizeAmount from Firestore (planSettings/plan_X)
+      const planRef = doc(db, "planSettings", `plan_${planId}`);
+      const planSnap = await getDoc(planRef);
 
-    // 2️⃣ Add announcements & remove plan from user's purchases array
-    for (const user of approvedPlans) {
-      const userRef = doc(db, "users", user.uid);
-      const userSnap = await getDoc(userRef);
+      if (!planSnap.exists()) {
+        alert("❌ Plan settings not found.");
+        return;
+      }
 
-      const updatedPurchases = (userSnap.data()?.purchases || []).filter(
-        (purchase) => purchase.planId !== planId
-      );
+      const prize = Number(planSnap.data().prizeAmount); // ✅ read prizeAmount
 
-      if (user.uid === winnerUid) {
-      // Winner announcement
-      const winnerAnnouncement = `🏆 Congrats! ${selectedWinner.userName} won the Lucky Draw for ${getPlanName(planId)}! 🎉`;
-      
-      if (userSnap.exists()) {
-        await updateDoc(userRef, {
-          announcement: winnerAnnouncement,
-          announcementTimestamp: serverTimestamp(),
-          winnerAnnouncements: arrayUnion({
-            message: winnerAnnouncement,
-            timestamp: new Date()
-          }),
-          purchases: updatedPurchases,
-          // ⬅️ NEW: Add to planWins history
-          planWins: arrayUnion({
-            planName: getPlanName(planId),
-            amount: planPrize,
-            time: new Date().toISOString()
-          })
+      // 1️⃣ Update winner's wallet balance
+      const winnerRef = doc(db, "users", winnerUid);
+      const winnerSnap = await getDoc(winnerRef);
+      if (winnerSnap.exists()) {
+        const currentBalance = Number(winnerSnap.data().wallet || 0);
+        await updateDoc(winnerRef, {
+          wallet: currentBalance + prize
         });
       } else {
-        await setDoc(userRef, {
-          announcement: winnerAnnouncement,
-          announcementTimestamp: serverTimestamp(),
-          winnerAnnouncements: [{
-            message: winnerAnnouncement,
-            timestamp: serverTimestamp()
-          }],
-          purchases: updatedPurchases,
-          createdAt: Timestamp.now(),
-          // ⬅️ NEW: Add to planWins history
-          planWins: [{
-            planName: getPlanName(planId),
-            amount: planPrize,
-            time: new Date().toISOString()
-          }]
+        await setDoc(winnerRef, {
+          wallet: prize,
+          createdAt: Timestamp.now()
         });
       }
+
+      // 2️⃣ Add announcements & update purchases
+      for (const user of approvedPlans) {
+        const userRef = doc(db, "users", user.uid);
+        const userSnap = await getDoc(userRef);
+
+        const updatedPurchases = (userSnap.data()?.purchases || []).filter(
+          (purchase) => purchase.planId !== planId
+        );
+
+        if (user.uid === winnerUid) {
+          const winnerAnnouncement = `🏆 Congrats! ${selectedWinner.userName} won the Lucky Draw for ${getPlanName(planId)} — $${prize}! 🎉`;
+
+          if (userSnap.exists()) {
+            await updateDoc(userRef, {
+              announcement: winnerAnnouncement,
+              announcementTimestamp: serverTimestamp(),
+              winnerAnnouncements: arrayUnion({
+                message: winnerAnnouncement,
+                timestamp: new Date()
+              }),
+              purchases: updatedPurchases,
+              planWins: arrayUnion({
+                planName: getPlanName(planId),
+                amount: prize,
+                time: new Date().toISOString()
+              })
+            });
+          } else {
+            await setDoc(userRef, {
+              announcement: winnerAnnouncement,
+              announcementTimestamp: serverTimestamp(),
+              winnerAnnouncements: [{
+                message: winnerAnnouncement,
+                timestamp: serverTimestamp()
+              }],
+              purchases: updatedPurchases,
+              createdAt: Timestamp.now(),
+              planWins: [{
+                planName: getPlanName(planId),
+                amount: prize,
+                time: new Date().toISOString()
+              }]
+            });
+          }
+        }
+      }
+
+      // 3️⃣ Delete purchase docs
+      const purchasesRef = collection(db, "purchases");
+      const purchasesQuery = query(purchasesRef, where("planId", "==", planId));
+      const purchasesSnap = await getDocs(purchasesQuery);
+      for (const purchaseDoc of purchasesSnap.docs) {
+        await deleteDoc(purchaseDoc.ref);
+      }
+
+      // 4️⃣ Restart countdown
+      await updateDoc(planRef, { startTime: Timestamp.now() });
+
+      // 5️⃣ Reset states
+      setSelectedWinner(null);
+      setCountdownFinishedPlans(prev => ({ ...prev, [`plan_${planId}`]: false }));
+      fetchMemberCounts();
+
+      console.log(`✅ Lucky draw finalized for plan ${planId}`);
+    } catch (error) {
+      console.error("Error in handleProceed:", error);
+    } finally {
+      setLoading(false);
     }
+  };
 
-    }
+// ⏰ Auto trigger rewards every day at 8:00 AM
+      useEffect(() => {
+        const checkAndReward = () => {
+          const now = new Date();
+          const hours = now.getHours();
+          const minutes = now.getMinutes();
 
-    // 3️⃣ Delete all purchase docs for this plan from "purchases" collection
-    const purchasesRef = collection(db, "purchases");
-    const purchasesQuery = query(purchasesRef, where("planId", "==", planId));
-    const purchasesSnap = await getDocs(purchasesQuery);
-    for (const purchaseDoc of purchasesSnap.docs) {
-      await deleteDoc(purchaseDoc.ref);
-    }
+          if (hours === 8 && minutes === 0) {
+            setLoading(true);
+            poolsConfig.forEach(pool => {
+              const poolId = `pool_${pool.id}`;
+              rewardAll(poolId);
+            });
+          }
+        };
 
-    // 4️⃣ Restart countdown for this plan
-    const planRef = doc(db, "planSettings", `plan_${planId}`);
-    const planSnap = await getDoc(planRef);
-    if (planSnap.exists()) {
-      await updateDoc(planRef, {
-        startTime: Timestamp.now()
-      });
-    }
-
-    // 5️⃣ Reset states
-    setSelectedWinner(null);
-    setCountdownFinishedPlans(prev => ({ ...prev, [`plan_${planId}`]: false }));
-    fetchMemberCounts();
-
-    console.log(`✅ Lucky draw finalized for plan ${planId}`);
-  } catch (error) {
-    console.error("Error in handleProceed:", error);
-  }
-  finally{
-    setLoading(false);
-  }
-};
+        // check every minute
+        const interval = setInterval(checkAndReward, 60000);
+        return () => clearInterval(interval);
+      }, []);
 
   const getPlanName = (planId) => {
     if (planId === 1) return 'Silver Plan';
@@ -521,120 +536,31 @@ const handleProceed = async () => {
   }
 };
 
-
-const rewardUser = async (poolId, user) => {
-  try {
+  const rewardAll = async (poolId) => {
+    const users = poolsData[poolId] || [];
     const poolInfo = poolsConfig.find(p => `pool_${p.id}` === poolId);
     const rewardAmt = poolInfo?.reward || 0;
 
-    // 1️⃣ Update user doc & remove from purchases array
-    const userRef = doc(db, "users", user.uid);
-    const userSnap = await getDoc(userRef);
+    for (const user of users) {
+      const userRef = doc(db, "users", user.uid);
+      const userSnap = await getDoc(userRef);
 
-    if (userSnap.exists()) {
-      const currentData = userSnap.data();
+      if (userSnap.exists()) {
+        const currentData = userSnap.data();
 
-      setLoading(true);
+        setLoading(true);
 
-      // Remove any matching pool purchase
-      const updatedPurchases = (currentData.purchases || []).filter(
-        p => p.poolId !== poolId && `pool_${p.planId}` !== poolId
-      );
-
-      await updateDoc(userRef, {
-        wallet: Number(currentData.wallet || 0) + rewardAmt,
-        purchases: updatedPurchases,
-        alertMessage: `🎁 You received $${rewardAmt} from ${poolId}!`,
-        alertTimestamp: serverTimestamp(),
-        poolWins: arrayUnion({
-          poolName: poolId,
-          amount: rewardAmt,
-          time: new Date().toISOString()
-        })
-      });
+        await updateDoc(userRef, {
+          wallet: Number(currentData.wallet || 0) + rewardAmt,
+          alertMessage: `🎁 You received $${rewardAmt} from ${poolId}!`,
+          alertTimestamp: serverTimestamp(),
+        });
+      }
     }
 
-    // Remove from purchases collection — only match pools
-    const purchasesRef = collection(db, "purchases");
-    const poolQuery = query(
-      purchasesRef,
-      where("planId", "==", poolId),
-      where("type", "==", "pool"),
-      where("uid", "==", user.uid)
-    );
-
-    const poolSnap = await getDocs(poolQuery);
-    for (const docSnap of poolSnap.docs) {
-      await deleteDoc(docSnap.ref);
-    }
-
-
-    // 3️⃣ Remove from pool subcollection
-    await deleteDoc(doc(db, "pools", poolId, "users", user.id));
-
-    alert(`✅ Reward sent and ${poolId} cleared for ${user.userName}`);
-  } catch (err) {
-    console.error("Error rewarding user:", err);
-  }
-  finally{
+    alert(`✅ Rewards sent to all users in ${poolId}`);
     setLoading(false);
-  }
-};
-const rewardAll = async (poolId) => {
-  const users = poolsData[poolId] || [];
-  const poolInfo = poolsConfig.find(p => `pool_${p.id}` === poolId);
-  const rewardAmt = poolInfo?.reward || 0;
-
-  for (const user of users) {
-    const userRef = doc(db, "users", user.uid);
-    const userSnap = await getDoc(userRef);
-
-    if (userSnap.exists()) {
-      const currentData = userSnap.data();
-
-      setLoading(true);
-
-
-      const updatedPurchases = (currentData.purchases || []).filter(
-        p => p.poolId !== poolId && `pool_${p.planId}` !== poolId
-      );
-
-      await updateDoc(userRef, {
-        wallet: Number(currentData.wallet || 0) + rewardAmt,
-        purchases: updatedPurchases,
-        alertMessage: `🎁 You received $${rewardAmt} from ${poolId}!`,
-        alertTimestamp: serverTimestamp(),
-        poolWins: arrayUnion({
-          poolName: poolId,
-          amount: rewardAmt,
-          time: new Date().toISOString()
-        })
-      });
-    }
-
-    // Remove from purchases collection — only match pools
-    const purchasesRef = collection(db, "purchases");
-    const poolQuery = query(
-      purchasesRef,
-      where("planId", "==", poolId),
-      where("type", "==", "pool"),
-      where("uid", "==", user.uid)
-    );
-
-    const poolSnap = await getDocs(poolQuery);
-    for (const docSnap of poolSnap.docs) {
-      await deleteDoc(docSnap.ref);
-    }
-
-
-    // Remove from pool users subcollection
-    await deleteDoc(doc(db, "pools", poolId, "users", user.id));
-  }
-
-  alert(`✅ Rewards sent and ${poolId} reset for all users`);
-  setLoading(false);
-};
-
+  };
 
   return (
     <div className="admin-dashboard">
@@ -667,6 +593,13 @@ const rewardAll = async (poolId) => {
           </div>
 
       <div className="admin-buttons">
+        
+        <button className="pending-btn" onClick={() => setShowDepositModal(true)}>
+          Deposit Requests ({depositRequests.length})
+        </button>
+        <button className="pending-btn" onClick={() => setShowWithdrawModal(true)}>
+          Withdraw Requests ({withdrawRequests.length})
+        </button>
         <button className="plan-btn" onClick={() => fetchApprovedPlans(1)}>
           Plan 1 Members ({plan1Count}) ⏳ {countdowns.plan_1 || 'Loading...'}
         </button>
@@ -676,12 +609,7 @@ const rewardAll = async (poolId) => {
         <button className="plan-btn" onClick={() => fetchApprovedPlans(3)}>
           Plan 3 Members ({plan3Count}) ⏳ {countdowns.plan_3 || 'Loading...'}
         </button>
-        <button className="pending-btn" onClick={() => setShowDepositModal(true)}>
-          Deposit Requests ({depositRequests.length})
-        </button>
-        <button className="pending-btn" onClick={() => setShowWithdrawModal(true)}>
-          Withdraw Requests ({withdrawRequests.length})
-        </button>
+        
       </div>
 
       <h2 style={{ marginTop: "20px" }}>🏆 Pools Management</h2>
@@ -707,16 +635,21 @@ const rewardAll = async (poolId) => {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             style={{ padding: "6px", marginBottom: "10px", width: "250px" }}
-          />
+          />  
 
           <h3>{selectedPool.toUpperCase()} Users</h3>
-          <button onClick={() => rewardAll(selectedPool)} disabled={loading}>{loading ? 'Rewarding...' : 'Reward All'}</button>
+          <button 
+            onClick={() => rewardAll(selectedPool)} 
+            disabled={loading || (new Date().getHours() === 8 && new Date().getMinutes() === 0)}
+          >
+            {loading ? 'Rewarding...' : 'Reward All'}
+          </button>
           <table style={{ width: "100%", color: "#fff", borderCollapse: "collapse", marginTop: "10px"}}>
             <thead>
               <tr>
                 <th>Name</th>
                 <th>Joined</th>
-                <th>Action</th>
+               
               </tr>
             </thead>
             <tbody>
@@ -728,9 +661,6 @@ const rewardAll = async (poolId) => {
                 <tr key={user.id}>
                   <td>{user.userName}</td>
                    <td>{user.joinedAt?.toDate().toLocaleString() || ""}</td>
-                  <td>
-                    <button onClick={() => rewardUser(selectedPool, user)}disabled={loading}>{loading ? 'Rewarding...' : 'Reward'}</button>
-                  </td>
                 </tr>
               ))}
             </tbody>

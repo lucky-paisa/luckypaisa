@@ -1,7 +1,9 @@
 import './styles/Home.css';
+import Logo from '../assets/Logo.png';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useState, useRef } from 'react';  
+import { useMemo } from "react";
 import {
   doc,
   updateDoc,
@@ -21,8 +23,6 @@ import { auth } from "../firebase";
 
 const Home = () => {
   const { user, logout } = useAuth();
-  const [planWins, setPlanWins] = useState([]);
-  const [poolWins, setPoolWins] = useState([]);
   const navigate = useNavigate();
   const [wallet, setWallet] = useState(0);
   const [purchases, setPurchases] = useState([]);
@@ -52,6 +52,38 @@ const Home = () => {
   const [withdrawHistory, setWithdrawHistory] = useState([]);
   const [depositHistory, setDepositHistory] = useState([]);
   const [transactions, setTransactions] = useState([]);
+  const [planWins, setPlanWins] = useState([]);
+  const [poolWins, setPoolWins] = useState([]);
+
+
+  // 📌 Combine all history into one array
+const combinedHistory = useMemo(() => {
+  const deposits = (depositHistory || []).map(item => ({
+    type: "deposit",
+    amount: item.amount,
+    status: item.status,
+    time: new Date(item.time).getTime()
+  }));
+
+  const withdrawals = (withdrawHistory || []).map(item => ({
+    type: "withdraw",
+    amount: item.amount,
+    status: item.status,
+    time: new Date(item.time).getTime()
+  }));
+
+  const wins = (planWins || []).map(item => ({
+    type: "planWin",
+    amount: item.amount,
+    planName: item.planName,
+    time: new Date(item.time).getTime()
+  }));
+
+  // merge and sort latest → oldest
+  return [...deposits, ...withdrawals, ...wins].sort((a, b) => b.time - a.time);
+}, [depositHistory, withdrawHistory, planWins]);
+
+
 
 useEffect(() => {
   if (!user || !user.uid) return;
@@ -193,8 +225,9 @@ const unsubscribePurchases = onSnapshot(purchasesRef, async (querySnapshot) => {
     setPendingPlanIds(newPending);
 
     // ✅ Show announcement
-    const planNames = approvedPlans.map(p => p.planId).join(', ');
-    showToast(`✅ Your Plan(s) ${planNames} have been approved!`, 'success');
+    const planNames = approvedPlans.map(p => planNameMap[p.planId] || `Plan ${p.planId}`).join(', ');
+    showToast(`✅ Your ${planNames} has been approved!`, 'success');
+
 
   }
 });
@@ -356,7 +389,7 @@ useEffect(() => {
   }
 
   if (purchases.some(p => p.planId === selectedPlan.id)) {
-    showToast("❌ You already purchased this plan.", "error");
+    showToast(`❌ You already purchased ${planNameMap[selectedPlan.id]}.`, "error");
     return;
   }
   setLoading(true);
@@ -679,16 +712,10 @@ const fetchDepositHistory = async () => {
 };
 
 const pools = [
-  { id: 1, price: 10, reward: 30 },
-  { id: 2, price: 20, reward: 60 },
-  { id: 3, price: 30, reward: 90 },
-  { id: 4, price: 50, reward: 150 },
-  { id: 5, price: 70, reward: 210 },
-  { id: 6, price: 90, reward: 270 },
-  { id: 7, price: 100, reward: 300 },
-  { id: 8, price: 150, reward: 450 },
-  { id: 9, price: 200, reward: 600 },
-  { id: 10, price: 250, reward: 750 },
+  { id: 1, price: 50, reward: 1 },
+  { id: 2, price: 100, reward: 2.5 },
+  { id: 3, price: 200, reward: 5.5 },
+  { id: 4, price: 300, reward: 8.5 },
 ];
 const [purchasedPools, setPurchasedPools] = useState([]);
 const [showPools, setShowPools] = useState(false);
@@ -781,9 +808,9 @@ const planNameMap = {
           <button className="mainBtn" style={{borderRadius:'50px'}} onClick={() => setShowProfile(true)}>👤</button>
            <h1 className="welcome">
            Welcome, <span style={{ color: '#ffd700' , fontSize: '25px' }}>{user?.name || "Guest"}</span>
-        </h1>
-           <img src='./src/assets/Logo.png' style={{width:'90px' , justifySelf:'center', display: 'flex',justifyContent: 'center', alignItems: 'center',}}></img> 
+        </h1>       
         </div>
+           <img src={Logo} style={{width:'90px', marginLeft: 'auto'}} />
         </div>
         <div className="announcement-wrap">
           <div className="marquee">
@@ -853,13 +880,15 @@ const planNameMap = {
           className={`planCard plan-${plan.id}`}
           onClick={() => {
             if (pendingPlanIds.includes(plan.id)) {
-              showToast(`⏳ You already requested to buy Plan ${plan.id}... Will be approvd within 12-hours⏰.`, 'warning');
+              showToast(`⏳ You already requested to buy ${planNameMap[plan.id]}... Will be approved within 12 hours ⏰.`, 'warning');
+
               return;
             }
             const activePurchase = purchases.find(p => p.planId === plan.id);
             if (activePurchase) {
               if (!activePurchase.expiresAt || Date.now() < activePurchase.expiresAt) {
-                showToast(`⏳ You already purchased Plan ${plan.id}. Wait for the lucky draw to end.`, 'warning');
+                showToast(`⏳ You already purchased ${planNameMap[plan.id]}. Wait for the lucky draw to end.`, 'warning');
+
                 return;
               }
             }
@@ -965,8 +994,8 @@ const planNameMap = {
             <p><strong>Name:</strong> {userData?.name || 'N/A'}</p>
             <p><strong>Email:</strong> {userData?.email || 'N/A'}</p>
             <p><strong>Phone:</strong> {userData?.phone || 'N/A'}</p>
-            <p> <strong>Reference:</strong>{" "} {userData?.referenceBy ? (userData.referenceBy === "SELF" ? "SELF" : userData.referenceName || userData.referenceBy) : "SELF"} </p>
-            <p><strong>Wallet Address:</strong> {userData?.walletAddress || 'N/A'}</p>
+            <p><strong>Wallet Address:</strong> <br/> {userData?.walletAddress || 'N/A'}</p>
+            <p> <strong>Reference:</strong>{" "}<br/> {userData?.referenceBy ? (userData.referenceBy === "SELF" ? "SELF" : userData.referenceName || userData.referenceBy) : "SELF"} </p>
             {/* Referral Link Section */}
             <div style={{ marginTop: "15px" }}>
               <label><strong>Invite Link:</strong></label>
@@ -1015,10 +1044,8 @@ const planNameMap = {
                       <h3 className="purchase-title">
                         {planNameMap[purchase.planId] || ` ${purchase.planId}`}
                       </h3>
-
-                      <p className="purchase-date"><span className="status-approved"> Purchased</span></p>
+                      <p className="purchase-date" style={{marginLeft: 'auto'}}><span className="status-approved"> ✅🛍️ </span></p>
                     </div> 
-
                   ))}
                 </div>
               )}
@@ -1034,33 +1061,35 @@ const planNameMap = {
             <button onClick={() => setShowHistory(false)} className="cancelBtn" style={{ marginLeft: '85%' }}>X</button>
             <h3>📜 Transaction History</h3>
 
-            {depositHistory.map((item, index) => (
-              <div key={`dep-${index}`} style={{ color: 'limegreen' }}>
-                💰 Deposit — ${item.amount} ({item.status}) — {new Date(item.time).toLocaleString()}
+            {combinedHistory.length === 0 ? (
+              <p style={{ textAlign: "center", color: "#aaa" }}>No history yet.</p>
+            ) : (
+              <div className="history-grid">
+                {combinedHistory.map((item, index) => (
+                  <div key={index} className="history-card" style={{
+                    background: "#1e1e2f",
+                    margin: "8px 0",
+                    padding: "10px",
+                    borderRadius: "8px",
+                    borderLeft: item.type === "deposit" ? "4px solid limegreen"
+                      : item.type === "withdraw" ? "4px solid red"
+                      : "4px solid gold"
+                  }}>
+                    <p>
+                      {item.type === "deposit" && `💰 Deposit — $${item.amount} (${item.status})`}
+                      {item.type === "withdraw" && `💸 Withdrawal — $${item.amount} (${item.status})`}
+                      {item.type === "planWin" && `🏆 Won ${item.planName} — $${item.amount}`}
+                    </p>
+                    <small style={{ color: "#bbb" }}>
+                      {new Date(item.time).toLocaleString()}
+                    </small>
+                  </div>
+                ))}
               </div>
-            ))}
-
-            {withdrawHistory.map((item, index) => (
-              <div key={`with-${index}`} style={{ color: 'red' }}>
-                💸 Withdrawal — ${item.amount} ({item.status}) — {new Date(item.time).toLocaleString()}
-              </div>
-            ))}
-
-            {planWins.map((item, index) => (
-              <div key={`plan-${index}`} style={{ color: 'white' }}>
-                🏆 Won {item.planName} — ${item.amount} — {new Date(item.time).toLocaleString()}
-              </div>
-            ))}
-
-            {poolWins.map((item, index) => (
-              <div key={`pool-${index}`} style={{ color: 'white' }}>
-                🏆 Won {item.poolName} — ${item.amount} — {new Date(item.time).toLocaleString()}
-              </div>
-            ))}
+            )}
           </div>
         </div>
       )}
-
 
       {/* Toast Notifications */}
       <div className="toast-container">
@@ -1115,15 +1144,54 @@ const planNameMap = {
             <h3>🏆 Available Pools</h3>
             <div style={{ display: 'grid', gap: '08px' }}>
               {pools.map(pool => (
-                <div key={pool.id} style={{ border: '1px solid #666', padding: '10px', borderRadius: '8px', background: '#2c2f48', display:'flex' }}>
-                  <p><b>Pool  {pool.id}</b> &nbsp; - &nbsp; Price: ${pool.price} &nbsp; - &nbsp; Reward: ${pool.reward}</p>
-                    {purchasedPools.includes(pool.id) ? (
-                      <p style={{color: 'lime'}}>&nbsp;&nbsp;Purchased</p>
-                    ) : (
-                      <button className="mainBtn" style={{marginLeft: 'auto'}} onClick={() => handleBuyPool(pool)} disabled={loading}>{loading ? 'Buying...' : 'Buy'}</button>
-                    )}
-                    <br/>
-                    
+                
+                <div
+                  key={pool.id}
+                  style={{
+                    background: purchasedPools.includes(pool.id)
+                      ? "linear-gradient(135deg, #1e3c72, #2a5298)"
+                      : "linear-gradient(135deg, #2c2f48, #1a1c2c)",
+                    padding: "20px",
+                    borderRadius: "15px",
+                    boxShadow: "0 4px 10px rgba(0,0,0,0.4)",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    textAlign: "center",
+                    transition: "transform 0.2s ease, box-shadow 0.2s ease",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = "scale(1.05)";
+                    e.currentTarget.style.boxShadow = "0 6px 15px rgba(0,0,0,0.6)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = "scale(1)";
+                    e.currentTarget.style.boxShadow = "0 4px 10px rgba(0,0,0,0.4)";
+                  }}
+                >
+                  <h3 style={{ color: "#ffd700", marginBottom: "10px" }}>🏆 Pool {pool.id}</h3>
+                  <p style={{ fontSize: "14px", color: "#fff" }}>💵 Price: <b>${pool.price}</b></p>
+                  <p style={{ fontSize: "14px", color: "#fff" }}>🎁 Reward: <b>${pool.reward}</b></p>
+                  <br />
+                  {purchasedPools.includes(pool.id) ? (
+                    <p style={{ color: "lime", fontWeight: "bold" }}>✅ Upgraded</p>
+                  ) : (
+                    <button
+                      className="mainBtn"
+                      style={{
+                        marginTop: "10px",
+                        width: "100%",
+                        borderRadius: "10px",
+                        background: "#ffd700",
+                        color: "#000",
+                        fontWeight: "bold",
+                      }}
+                      onClick={() => handleBuyPool(pool)}
+                      disabled={loading}
+                    >
+                      {loading ? "Buying..." : "Upgrade"}
+                    </button>
+                  )}
                 </div>
                 
               ))}

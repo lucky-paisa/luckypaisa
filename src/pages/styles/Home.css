@@ -505,3 +505,16 @@
   background: linear-gradient(180deg,#e6f9ff,#cfefff);
   color: #03202a;
 }
+.history-grid {
+  display: flex;
+  flex-direction: column;
+}
+
+.history-card {
+  transition: transform 0.2s ease;
+}
+
+.history-card:hover {
+  transform: scale(1.02);
+}
+
