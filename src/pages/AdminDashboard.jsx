@@ -323,19 +323,21 @@ const handleProceed = async () => {
 
         newBalance = Number(userData.wallet || 0) + Number(request.amount);
 
+        // Update depositor’s wallet
         await updateDoc(userRef, {
           wallet: newBalance,
           depositHistory: arrayUnion({
             amount: request.amount,
             status: 'Approved',
-            time: new Date().toISOString()
+            time: new Date().toISOString(),
           }),
           announcement: "✅ Deposit successful!",
           announcementTimestamp: serverTimestamp(),
           alertMessage: `✅ Your deposit request of $${request.amount} has been approved!`,
-          alertTimestamp: serverTimestamp()
+          alertTimestamp: serverTimestamp(),
         });
 
+        // ✅ Update admin earnings
         await setDoc(
           doc(db, "adminData", "earnings"),
           { total: increment(Number(request.amount)) },
@@ -349,7 +351,12 @@ const handleProceed = async () => {
 
           if (inviterSnap.exists()) {
             const inviterData = inviterSnap.data();
-            const inviterBalance = inviterData.wallet || 0;
+
+            // ✅ Keep inviter's actual balance if exists, never overwrite with 0
+            const inviterBalance = typeof inviterData.wallet === "number"
+              ? inviterData.wallet
+              : 0;
+
             const bonus = Number(request.amount) * 0.10;
 
             await updateDoc(inviterRef, {
@@ -357,23 +364,25 @@ const handleProceed = async () => {
               referralBonusHistory: arrayUnion({
                 fromUser: request.uid,
                 amount: bonus,
-                time: new Date().toISOString()
+                time: new Date().toISOString(),
               }),
               alertMessage: `🎉 You received $${bonus.toFixed(2)} referral bonus from ${request.userName}'s first deposit!`,
-              alertTimestamp: serverTimestamp()
+              alertTimestamp: serverTimestamp(),
             });
 
-            // 🔔 Show one-time alert (Admin side, but user will see via alertMessage in DB too)
+            // 🔔 Admin sees confirmation alert
             alert(`${request.userName} invitation Reward $${bonus.toFixed(2)}`);
           }
         }
       }
 
+      // ✅ Remove from pending deposit requests
       await deleteDoc(doc(db, 'depositRequests', request.id));
 
       // Instantly update total earnings in UI
       setTotalEarnings(prev => prev + Number(request.amount));
       fetchDepositRequests();
+
       alert(`Deposit of $${request.amount} approved for ${request.userName}`);
     } catch (error) {
       console.error(error);
@@ -381,7 +390,6 @@ const handleProceed = async () => {
       setLoading(false);
     }
   };
-
 
   const fetchDepositRequests = async () => {
       const snapshot = await getDocs(collection(db, 'depositRequests'));
