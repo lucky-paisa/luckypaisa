@@ -331,6 +331,7 @@ useEffect(() => {
       setUserData(prev => ({ ...prev, wallet: newBalance }));
       setWithdrawAmount(""); // reset input
       setWithdrawAmount(""); // reset input
+      setShowWithdrawModal(false);
       setAlertModal({
         show: true,
         message: "✅ Your withdrawal request has been sent and will be approved within 24 hours.",
