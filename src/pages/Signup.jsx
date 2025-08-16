@@ -3,9 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { auth, db } from '../firebase';
+import { useLocation } from 'react-router-dom';
+
 
 const Signup = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const referralId = searchParams.get("ref") || null;
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -52,6 +57,7 @@ const Signup = () => {
         email: formData.email,
         phone: formData.phone,
         joinedAt: new Date(),
+        referenceBy: referralId ? referralId : "SELF", // store inviter UID or SELF
       });
 
       navigate('/login');

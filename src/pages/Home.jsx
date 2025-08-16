@@ -17,8 +17,7 @@ import {
   arrayUnion
 } from 'firebase/firestore';
 import { db } from '../firebase';
-
-
+import { auth } from "../firebase";
 
 const Home = () => {
   const { user, logout } = useAuth();
@@ -965,7 +964,30 @@ const planNameMap = {
             <p><strong>Name:</strong> {userData?.name || 'N/A'}</p>
             <p><strong>Email:</strong> {userData?.email || 'N/A'}</p>
             <p><strong>Phone:</strong> {userData?.phone || 'N/A'}</p>
+            <p> <strong>Reference:</strong>{" "} {userData?.referenceBy ? (userData.referenceBy === "SELF" ? "SELF" : userData.referenceName || userData.referenceBy) : "SELF"} </p>
             <p><strong>Wallet Address:</strong> {userData?.walletAddress || 'N/A'}</p>
+            {/* Referral Link Section */}
+            <div style={{ marginTop: "15px" }}>
+              <label><strong>Invite Link:</strong></label>
+              <div style={{ display: "flex", gap: "8px", marginTop: "5px" }}>
+                <input
+                  type="text"
+                  value={`${window.location.origin}/signup?ref=${user?.uid}`}
+                  readOnly
+                  style={{ flex: 1, padding: "6px", borderRadius: "6px", border: "1px solid #ccc" }}
+                />
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(`${window.location.origin}/signup?ref=${user?.uid}`);
+                    alert("Referral link copied!");
+                  }}
+                  style={{ padding: "6px 10px", background: "#4CAF50", color: "white", border: "none", borderRadius: "6px" }}
+                >
+                  Copy
+                </button>
+              </div>
+            </div>
+
             <br/>
             <button className="logoutBtn" onClick={handleLogout} disabled={loading}>{loading ? 'Bye...' : '🚪 Logout'}</button>  
             <br/>

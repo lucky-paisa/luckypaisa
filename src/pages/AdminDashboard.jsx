@@ -306,7 +306,6 @@ const handleProceed = async () => {
     return 'Diamond Plan';
   };
 
-
   const handleApproveDeposit = async (request) => {
     try {
       setLoading(true);
@@ -316,40 +315,73 @@ const handleProceed = async () => {
       let newBalance = Number(request.amount);
 
       if (userSnap.exists()) {
-        newBalance = Number(userSnap.data().wallet || 0) + Number(request.amount);
+        const userData = userSnap.data();
+        const depositHistory = userData.depositHistory || [];
+
+        // ✅ Check if this is the first-ever deposit
+        const isFirstDeposit = depositHistory.length === 0;
+
+        newBalance = Number(userData.wallet || 0) + Number(request.amount);
 
         await updateDoc(userRef, {
           wallet: newBalance,
           depositHistory: arrayUnion({
-          amount: request.amount,
-          status: 'Approved',
-          time: new Date().toISOString()
-        }),
+            amount: request.amount,
+            status: 'Approved',
+            time: new Date().toISOString()
+          }),
           announcement: "✅ Deposit successful!",
           announcementTimestamp: serverTimestamp(),
           alertMessage: `✅ Your deposit request of $${request.amount} has been approved!`,
           alertTimestamp: serverTimestamp()
         });
+
         await setDoc(
           doc(db, "adminData", "earnings"),
           { total: increment(Number(request.amount)) },
           { merge: true }
         );
 
+        // 🎁 Referral Bonus (only for FIRST deposit)
+        if (isFirstDeposit && userData.referenceBy && userData.referenceBy !== "SELF") {
+          const inviterRef = doc(db, "users", userData.referenceBy);
+          const inviterSnap = await getDoc(inviterRef);
+
+          if (inviterSnap.exists()) {
+            const inviterData = inviterSnap.data();
+            const inviterBalance = inviterData.wallet || 0;
+            const bonus = Number(request.amount) * 0.10;
+
+            await updateDoc(inviterRef, {
+              wallet: inviterBalance + bonus,
+              referralBonusHistory: arrayUnion({
+                fromUser: request.uid,
+                amount: bonus,
+                time: new Date().toISOString()
+              }),
+              alertMessage: `🎉 You received $${bonus.toFixed(2)} referral bonus from ${request.userName}'s first deposit!`,
+              alertTimestamp: serverTimestamp()
+            });
+
+            // 🔔 Show one-time alert (Admin side, but user will see via alertMessage in DB too)
+            alert(`${request.userName} invitation Reward $${bonus.toFixed(2)}`);
+          }
+        }
       }
 
       await deleteDoc(doc(db, 'depositRequests', request.id));
+
       // Instantly update total earnings in UI
       setTotalEarnings(prev => prev + Number(request.amount));
       fetchDepositRequests();
       alert(`Deposit of $${request.amount} approved for ${request.userName}`);
     } catch (error) {
       console.error(error);
-    }
-    finally{
+    } finally {
       setLoading(false);
     }
   };
+
 
   const fetchDepositRequests = async () => {
       const snapshot = await getDocs(collection(db, 'depositRequests'));
