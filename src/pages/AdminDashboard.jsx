@@ -318,13 +318,13 @@ const handleProceed = async () => {
       }
 
       const userData = userSnap.data();
-      const depositHistory = userData.depositHistory || [];
+      const previousBalance = Number(userData.wallet || 0);
 
-      // ✅ Check if first-ever deposit
-      const isFirstDeposit = depositHistory.length === 0;
+      // ✅ Detect first deposit by wallet balance before update
+      const isFirstDeposit = previousBalance === 0;
 
       // ✅ Update depositor's wallet
-      const newBalance = Number(userData.wallet || 0) + Number(request.amount);
+      const newBalance = previousBalance + Number(request.amount);
       await updateDoc(userRef, {
         wallet: newBalance,
         depositHistory: arrayUnion({
@@ -345,21 +345,21 @@ const handleProceed = async () => {
         { merge: true }
       );
 
-      // 🎁 Referral Bonus (only for FIRST deposit)
+      // 🎁 Referral Bonus (only if first deposit)
       if (isFirstDeposit && userData.referenceBy && userData.referenceBy !== "SELF") {
         const inviterRef = doc(db, "users", userData.referenceBy);
         const inviterSnap = await getDoc(inviterRef);
 
         if (inviterSnap.exists()) {
           const inviterData = inviterSnap.data();
-          const inviterBalance = typeof inviterData.wallet === "number" ? inviterData.wallet : 0;
+          const inviterBalance = Number(inviterData.wallet || 0);
           const bonus = Number(request.amount) * 0.10;
 
           await updateDoc(inviterRef, {
             wallet: inviterBalance + bonus,
             referralBonusHistory: arrayUnion({
               fromUser: userData.uid,
-              fromName: userData.name || userData.email, // ✅ safer
+              fromName: userData.name || userData.email,
               amount: bonus,
               time: new Date().toISOString(),
             }),
@@ -369,9 +369,10 @@ const handleProceed = async () => {
             alertTimestamp: serverTimestamp(),
           });
 
-          // ✅ Admin sees confirmation
           alert(
-            `${userData.name || userData.email} invitation Reward $${bonus.toFixed(2)} sent to ${inviterData.name || inviterData.email}`
+            `${userData.name || userData.email} invitation Reward $${bonus.toFixed(
+              2
+            )} sent to ${inviterData.name || inviterData.email}`
           );
         }
       }
