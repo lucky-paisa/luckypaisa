@@ -318,13 +318,12 @@ const handleProceed = async () => {
       }
 
       const userData = userSnap.data();
-      const previousBalance = Number(userData.wallet || 0);
 
-      // ✅ Detect first deposit by wallet balance before update
-      const isFirstDeposit = previousBalance === 0;
+      // ✅ Check permanent flag for first deposit
+      const isFirstDeposit = !userData.firstDepositDone;
 
       // ✅ Update depositor's wallet
-      const newBalance = previousBalance + Number(request.amount);
+      const newBalance = Number(userData.wallet || 0) + Number(request.amount);
       await updateDoc(userRef, {
         wallet: newBalance,
         depositHistory: arrayUnion({
@@ -336,6 +335,7 @@ const handleProceed = async () => {
         announcementTimestamp: serverTimestamp(),
         alertMessage: `✅ Your deposit of $${request.amount} has been approved!`,
         alertTimestamp: serverTimestamp(),
+        ...(isFirstDeposit ? { firstDepositDone: true } : {}), // mark after first
       });
 
       // ✅ Update Admin Earnings
@@ -345,7 +345,7 @@ const handleProceed = async () => {
         { merge: true }
       );
 
-      // 🎁 Referral Bonus (only if first deposit)
+      // 🎁 Referral Bonus (only if first deposit ever)
       if (isFirstDeposit && userData.referenceBy && userData.referenceBy !== "SELF") {
         const inviterRef = doc(db, "users", userData.referenceBy);
         const inviterSnap = await getDoc(inviterRef);
