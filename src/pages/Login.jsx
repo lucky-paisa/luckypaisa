@@ -142,7 +142,7 @@ const Login = () => {
     <div style={styles.container}>
       <div style={styles.overlay}></div>
             <div style={styles.card} className="fade-in">
-              <h2 style={styles.title}><img src={Logo2} style={{width:'60px', marginLeft:'-5%'}} /> <br/>Login To<img src={Logo} style={{width:'120px', marginLeft:'-5%'}} /> </h2>
+              <h2 style={styles.title}><img src={Logo2} style={{width:'60px'}} /> <br/>Login To<img src={Logo} style={{width:'120px', marginLeft:'-5%'}} /> </h2>
              
               {/* Typing Heading */}
       <div style={styles.typingWrapper}>

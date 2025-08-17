@@ -1,5 +1,6 @@
 import './styles/Home.css';
-import Logo from '../assets/FLogo.png';
+import Logo from '../assets/Text2.png';
+import Logo2 from '../assets/Logo2.png';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useState, useRef } from 'react';  
@@ -858,9 +859,9 @@ const handleClaimReward = async (pool) => {
           <button className="mainBtn" style={{borderRadius:'50px'}} onClick={() => setShowProfile(true)}>👤</button>
            <h1 className="welcome">
            Welcome, <span style={{ color: '#ffd700' , fontSize: '25px' }}>{user?.name || "Guest"}</span>
+          &nbsp; To <div><img src={Logo2} style={{width:'25px'}} /> <img src={Logo} style={{width:'100px', marginLeft:'-2%'}} /></div>
         </h1>       
         </div>
-            <img src={Logo} style={{width:'120px', marginLeft: 'auto'}} />
         </div>
         <div className="announcement-wrap">
           <div className="marquee">
@@ -1174,7 +1175,7 @@ const handleClaimReward = async (pool) => {
               <button
                 onClick={() => {
                   navigator.clipboard.writeText(`${window.location.origin}/signup?ref=${user?.uid}`);
-                  alert("Referral link copied!");
+                  showToast("Referral link copied!", "success");
                 }}
                 style={{ 
                   background: "#2196F3", 
@@ -1303,14 +1304,55 @@ const handleClaimReward = async (pool) => {
               value={depositAmount}
               onChange={(e) => setDepositAmount(e.target.value)}
             />
-            <p>USDT (BEP-20) Wallet address</p>
-            <div className="addressBox">
-              <span>0x811e9ee845dabe38ac1d87595d646176f857e36a</span>
-              <button onClick={() => {
-                navigator.clipboard.writeText('0x811e9ee845dabe38ac1d87595d646176f857e36a');
-                showToast("Copied!", "success");
-              }}>📋 Copy</button>
-            </div>
+
+            {/* Invite Link Section */}
+            <div style={{ marginTop: "20px" }}>
+              <label style={{ fontWeight: "bold", color: "#ffd700" }}>🔗 USDT (BEP-20) Wallet address</label>
+              <div 
+                style={{ 
+                  display: "flex", 
+                  alignItems: "stretch", // ✅ makes input & button same height
+                  gap: "0", 
+                  marginTop: "5px" 
+                }}
+              >
+                <input
+                  type="text"
+                  value={'0x811e9ee845dabe38ac1d87595d646176f857e36a'}
+                  readOnly
+                  style={{ 
+                    flex: 1, 
+                    background: "#2c2c44", 
+                    color: "#fff",
+                    padding: "0 12px", 
+                    border: "1px solid #444",
+                    borderRight: "none",          // ✅ merges seamlessly with button
+                    borderRadius: "6px 0 0 6px",  // ✅ rounded left only
+                    fontSize: "14px",
+                    padding:"10px"
+                  }}
+                />
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText('0x811e9ee845dabe38ac1d87595d646176f857e36a');
+                    showToast("Wallet Address Copied!", "success");
+                  }}
+                  style={{ 
+                    background: "#fff", 
+                    color: "#2c2c44",
+                    border: "1px solid #444",
+                    borderLeft: "none",           // ✅ merges with input
+                    borderRadius: "0 6px 6px 0",  // ✅ rounded right only
+                    padding: "0 15px", 
+                    cursor: "pointer",
+                    fontWeight: "bold"
+                  }}
+                >
+                  📋 Copy
+                </button>
+              </div>
+            </div> 
+              
             <input type="file" accept="image/*" onChange={(e) => setDepositScreenshot(e.target.files[0])} />
             <button className="primaryBtn" onClick={handleDepositRequest} disabled={loading}>{loading ? 'Sending...' : 'Submit'}</button>
             <button className="cancelBtn" onClick={() => setShowDepositModal(false)}>Cancel</button>
