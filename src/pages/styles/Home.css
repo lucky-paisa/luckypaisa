@@ -517,4 +517,12 @@
 .history-card:hover {
   transform: scale(1.02);
 }
+.profile-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid #333;
+  color: #ddd;
+  font-size: 15px;
+}
 

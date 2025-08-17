@@ -54,7 +54,11 @@ const Home = () => {
   const [transactions, setTransactions] = useState([]);
   const [planWins, setPlanWins] = useState([]);
   const [poolWins, setPoolWins] = useState([]);
-
+  const [purchasedPools, setPurchasedPools] = useState([]);
+  const [showPools, setShowPools] = useState(false);
+  const [claiming, setClaiming] = useState(false);
+  const [lastClaims, setLastClaims] = useState({});
+  
 
   // 📌 Combine all history into one array
 const combinedHistory = useMemo(() => {
@@ -717,8 +721,6 @@ const pools = [
   { id: 3, price: 200, reward: 5.5 },
   { id: 4, price: 300, reward: 8.5 },
 ];
-const [purchasedPools, setPurchasedPools] = useState([]);
-const [showPools, setShowPools] = useState(false);
 
 const handleBuyPool = async (pool) => {
   if (!user) return;
@@ -744,22 +746,23 @@ const handleBuyPool = async (pool) => {
     // Deduct balance
     const newBalance = walletBalance - pool.price;
 
-    // Add to user's purchases array
-    const updatedPurchases = [
-      ...(userDataFromDb.purchases || []),
+   // 2️⃣ Remove smaller pools from user’s purchases
+  const newPurchases = (userDataFromDb.purchases || [])
+    .filter(p => !String(p.planId).startsWith("pool_") || Number(p.planId.split("_")[1]) >= pool.id);
+
+  // 3️⃣ Update user doc with filtered purchases
+  await updateDoc(userRef, {
+    wallet: newBalance,
+    purchases: [
+      ...newPurchases,
       {
         planId: `pool_${pool.id}`,
         price: pool.price,
         reward: pool.reward,
         purchasedAt: Date.now()
       }
-    ];
-
-    // 1️⃣ Update user document
-    await updateDoc(userRef, {
-      wallet: newBalance,
-      purchases: updatedPurchases
-    });
+    ]
+  });
 
     // 2️⃣ Add entry to purchases collection (so it persists like other plans)
     await addDoc(collection(db, "purchases"), {
@@ -800,6 +803,53 @@ const planNameMap = {
   3: "Diamond Plan"
 };
 
+const handleClaimReward = async (pool) => {
+  if (!user || claiming) return; // 🚫 prevent spam clicks
+  setClaiming(true);
+
+  try {
+    const claimKey = `lastClaim_${user.uid}_pool_${pool.id}`;
+    const lastClaim = Number(localStorage.getItem(claimKey) || 0);
+    const now = Date.now();
+
+    // ⏳ Check if 24h passed
+    if (now - lastClaim < 24 * 60 * 60 * 1000) {
+      showToast("⏳ You already claimed. Try again later.", "warning");
+      setClaiming(false);
+      return;
+    }
+
+    // 🔹 Get user from Firestore
+    const userRef = doc(db, "users", user.uid);
+    const userSnap = await getDoc(userRef);
+    if (!userSnap.exists()) return;
+
+    const data = userSnap.data();
+    const newBalance = (data.wallet || 0) + pool.reward;
+
+    // 🔹 Update Firestore
+    await updateDoc(userRef, {
+      wallet: newBalance,
+      alertMessage: `✅ Claimed daily reward $${pool.reward} from Pool ${pool.id}`,
+      alertTimestamp: serverTimestamp(),
+    });
+
+    // 📝 Save claim timestamp (local + state)
+    localStorage.setItem(claimKey, now.toString());
+    setLastClaims((prev) => ({ ...prev, [pool.id]: now }));
+
+    // 📝 Update wallet instantly
+    setWallet(newBalance);
+
+    // ✅ Success message
+    showToast(`✅ Claimed $${pool.reward} from Pool ${pool.id}`, "success");
+  } catch (err) {
+    console.error("Error claiming reward:", err);
+    showToast("❌ Error claiming reward.", "error");
+  } finally {
+    setClaiming(false);
+  }
+};
 
   return (
     <div className="container">
@@ -985,46 +1035,149 @@ const planNameMap = {
         </div>
       )}
 
-      {/* Profile Modal */}
-      {showProfile && (
-        <div className="modalOverlay" onClick={() => setShowProfile(false)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <button onClick={() => setShowProfile(false)} className="cancelBtn" style={{ marginLeft:'85%' }}>X</button>
-            <h3>👤 Profile Info</h3>
-            <p><strong>Name:</strong> {userData?.name || 'N/A'}</p>
-            <p><strong>Email:</strong> {userData?.email || 'N/A'}</p>
-            <p><strong>Phone:</strong> {userData?.phone || 'N/A'}</p>
-            <p><strong>Wallet Address:</strong> <br/> {userData?.walletAddress || 'N/A'}</p>
-            <p> <strong>Reference:</strong>{" "}<br/> {userData?.referenceBy ? (userData.referenceBy === "SELF" ? "SELF" : userData.referenceName || userData.referenceBy) : "SELF"} </p>
-            {/* Referral Link Section */}
-            <div style={{ marginTop: "15px" }}>
-              <label><strong>Invite Link:</strong></label>
-              <div style={{ display: "flex", gap: "8px", marginTop: "5px" }}>
-                <input
-                  type="text"
-                  value={`${window.location.origin}/signup?ref=${user?.uid}`}
-                  readOnly
-                  style={{ flex: 1, padding: "6px", borderRadius: "6px", border: "1px solid #ccc" }}
-                />
-                <button
-                  onClick={() => {
-                    navigator.clipboard.writeText(`${window.location.origin}/signup?ref=${user?.uid}`);
-                    alert("Referral link copied!");
-                  }}
-                  style={{ padding: "6px 10px", background: "#4CAF50", color: "white", border: "none", borderRadius: "6px" }}
-                >
-                  Copy
-                </button>
-              </div>
+     {showProfile && (
+      <div className="modalOverlay" onClick={() => setShowProfile(false)}>
+        <div 
+          className="modal" 
+          onClick={(e) => e.stopPropagation()} 
+          style={{ 
+            maxHeight: "80vh", 
+            overflowY: "auto", 
+            background: "linear-gradient(135deg, #1f1f2e, #2a2a40)", 
+            borderRadius: "16px", 
+            padding: "20px", 
+            boxShadow: "0 8px 25px rgba(0,0,0,0.6)", 
+            position: "relative" // ✅ keeps close button absolute inside
+          }}
+        >
+          {/* Close Button */}
+          <button 
+            onClick={() => setShowProfile(false)} 
+            className="cancelBtn" 
+            style={{ 
+              position: "absolute", // ✅ absolute instead of float
+              top: "15px", 
+              right: "15px", 
+              fontSize: "16px" 
+            }}
+          >
+            ✖
+          </button>
+
+          {/* Profile Header */}
+          <div style={{ textAlign: "center", marginBottom: "20px" }}>
+            <div 
+              style={{ 
+                width: "90px", 
+                height: "90px", 
+                borderRadius: "50%", 
+                background: "linear-gradient(135deg, #ffd700, #ffb400)", 
+                display: "flex", 
+                alignItems: "center", 
+                justifyContent: "center", 
+                fontSize: "36px", 
+                fontWeight: "bold", 
+                color: "#000", 
+                margin: "0 auto 10px auto", // ✅ centered
+                boxShadow: "0 4px 12px rgba(0,0,0,0.5)"
+              }}
+            >
+              {userData?.name ? userData.name.charAt(0).toUpperCase() : "👤"}
             </div>
+            <h2 style={{ margin: "10px 0 5px", color: "#ffd700" }}>
+              {userData?.name || "Guest User"}
+            </h2>
+            <p style={{ color: "#bbb", fontSize: "14px" }}>
+              {userData?.email || "No email set"}
+            </p>
+          </div>
 
-            <br/>
-            <button className="logoutBtn" onClick={handleLogout} disabled={loading}>{loading ? 'Bye...' : '🚪 Logout'}</button>  
-            <br/>
+          {/* Profile Details */}
+          <div style={{ marginBottom: "15px" }}>
+            <div className="profile-row">
+              <span>📱 Phone</span>
+              <span>{userData?.phone || "N/A"}</span>
+            </div>
+            <div className="profile-row">
+              <span>💳 Wallet Address</span>
+              <span style={{ wordBreak: "break-word", maxWidth: "220px", textAlign: "right" }}>
+                {userData?.walletAddress || "N/A"}
+              </span>
+            </div>
+            <div className="profile-row">
+              <span>🧑‍🤝‍🧑 Reference</span>
+              <span>
+                {userData?.referenceBy
+                  ? (userData.referenceBy === "SELF" 
+                      ? "SELF" 
+                      : userData.referenceName || userData.referenceBy)
+                  : "SELF"}
+              </span>
+            </div>
+          </div>
 
+          {/* Invite Link Section */}
+          <div style={{ marginTop: "20px" }}>
+            <label style={{ fontWeight: "bold", color: "#ffd700" }}>🔗 Invite Link</label>
+            <div 
+              style={{ 
+                display: "flex", 
+                alignItems: "stretch", // ✅ makes input & button same height
+                gap: "0", 
+                marginTop: "5px" 
+              }}
+            >
+              <input
+                type="text"
+                value={`${window.location.origin}/signup?ref=${user?.uid}`}
+                readOnly
+                style={{ 
+                  flex: 1, 
+                  background: "#2c2c44", 
+                  color: "#fff",
+                  padding: "0 12px", 
+                  border: "1px solid #444",
+                  borderRight: "none",          // ✅ merges seamlessly with button
+                  borderRadius: "6px 0 0 6px",  // ✅ rounded left only
+                  fontSize: "14px",
+                  padding:"10px"
+                }}
+              />
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(`${window.location.origin}/signup?ref=${user?.uid}`);
+                  alert("Referral link copied!");
+                }}
+                style={{ 
+                  background: "#2196F3", 
+                  color: "#fff",
+                  border: "1px solid #444",
+                  borderLeft: "none",           // ✅ merges with input
+                  borderRadius: "0 6px 6px 0",  // ✅ rounded right only
+                  padding: "0 15px", 
+                  cursor: "pointer",
+                  fontWeight: "bold"
+                }}
+              >
+                📋 Copy
+              </button>
+            </div>
+          </div>          
+
+          {/* Logout Button */}
+          <div style={{ textAlign: "center", marginTop: "25px" }}>
+            <button 
+              className="logoutBtn" 
+              onClick={handleLogout} 
+              disabled={loading} 
+              style={{ width: "100%", padding: "10px", borderRadius: "10px" }}
+            >
+              {loading ? "Bye..." : "🚪 Logout"}
+            </button>
           </div>
         </div>
-      )}
+      </div>
+    )}
 
       {/* Purchases Modal */}
       {showPurchases && (
@@ -1136,72 +1289,133 @@ const planNameMap = {
           </div>
         </div>
       )}
-
       {showPools && (
         <div className="modalOverlay">
           <div className="modal" style={{ maxHeight: '80vh', overflowY: 'auto' }}>
             <button onClick={() => setShowPools(false)} className="cancelBtn" style={{ marginLeft:'85%' }}>X</button>
             <h3>🏆 Available Pools</h3>
-            <div style={{ display: 'grid', gap: '08px' }}>
-              {pools.map(pool => (
-                
-                <div
-                  key={pool.id}
-                  style={{
-                    background: purchasedPools.includes(pool.id)
-                      ? "linear-gradient(135deg, #1e3c72, #2a5298)"
-                      : "linear-gradient(135deg, #2c2f48, #1a1c2c)",
-                    padding: "20px",
-                    borderRadius: "15px",
-                    boxShadow: "0 4px 10px rgba(0,0,0,0.4)",
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    textAlign: "center",
-                    transition: "transform 0.2s ease, box-shadow 0.2s ease",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = "scale(1.05)";
-                    e.currentTarget.style.boxShadow = "0 6px 15px rgba(0,0,0,0.6)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = "scale(1)";
-                    e.currentTarget.style.boxShadow = "0 4px 10px rgba(0,0,0,0.4)";
-                  }}
-                >
-                  <h3 style={{ color: "#ffd700", marginBottom: "10px" }}>🏆 Pool {pool.id}</h3>
-                  <p style={{ fontSize: "14px", color: "#fff" }}>💵 Price: <b>${pool.price}</b></p>
-                  <p style={{ fontSize: "14px", color: "#fff" }}>🎁 Reward: <b>${pool.reward}</b></p>
-                  <br />
-                  {purchasedPools.includes(pool.id) ? (
-                    <p style={{ color: "lime", fontWeight: "bold" }}>✅ Upgraded</p>
-                  ) : (
-                    <button
-                      className="mainBtn"
-                      style={{
-                        marginTop: "10px",
-                        width: "100%",
-                        borderRadius: "10px",
-                        background: "#ffd700",
-                        color: "#000",
-                        fontWeight: "bold",
-                      }}
-                      onClick={() => handleBuyPool(pool)}
-                      disabled={loading}
-                    >
-                      {loading ? "Buying..." : "Upgrade"}
-                    </button>
-                  )}
+
+            {/* ✅ NEW LOGIC: find highest pool purchased */}
+            {(() => {
+              const maxPool = Math.max(...purchasedPools, 0);
+
+              return (
+                <div style={{ display: 'grid', gap: '08px' }}>
+                  {pools.map(pool => {
+                    const isPurchased = purchasedPools.includes(pool.id);
+                    const isSmaller = pool.id < maxPool;
+
+                    return (
+                      <div
+                        key={pool.id}
+                        style={{
+                          background: isPurchased
+                            ? "linear-gradient(135deg, #1e3c72, #2a5298)" // purchased
+                            : isSmaller
+                              ? "#555" // smaller than highest -> greyed
+                              : "linear-gradient(135deg, #2c2f48, #1a1c2c)", // available
+                          opacity: isSmaller ? 0.6 : 1,
+                          pointerEvents: isSmaller ? "none" : "auto",
+                          padding: "20px",
+                          borderRadius: "15px",
+                          boxShadow: "0 4px 10px rgba(0,0,0,0.4)",
+                          display: "flex",
+                          flexDirection: "column",
+                          alignItems: "center",
+                          textAlign: "center",
+                          transition: "transform 0.2s ease, box-shadow 0.2s ease",
+                        }}
+                        onMouseEnter={(e) => {
+                          if (!isPurchased && !isSmaller) {
+                            e.currentTarget.style.transform = "scale(1.05)";
+                            e.currentTarget.style.boxShadow = "0 6px 15px rgba(0,0,0,0.6)";
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.transform = "scale(1)";
+                          e.currentTarget.style.boxShadow = "0 4px 10px rgba(0,0,0,0.4)";
+                        }}
+                      >
+                        <h3 style={{ color: isSmaller ? "#ccc" : "#ffd700", marginBottom: "10px" }}>
+                          🏆 Pool {pool.id}
+                        </h3>
+                        <p style={{ fontSize: "14px", color: isSmaller ? "#ddd" : "#fff" }}>
+                          💵 Price: <b>${pool.price}</b>
+                        </p>
+                        <p style={{ fontSize: "14px", color: isSmaller ? "#ddd" : "#fff" }}>
+                          🎁 Reward: <b>${pool.reward}</b>
+                        </p>
+                        <br />
+
+                        {isPurchased ? (
+                          <div style={{ marginTop: "10px" }}>
+                            {isSmaller ? (
+                              <p style={{ color: "#aaa", fontWeight: "bold" }}>⛔ Passed</p>
+                            ) : (
+                              <>
+                                <p style={{ color: "lime", fontWeight: "bold" }}>✅ Upgraded</p>
+                                <button
+                                  className="mainBtn"
+                                  onClick={() => handleClaimReward(pool)}
+                                  disabled={
+                                    claiming ||
+                                    (lastClaims[pool.id] &&
+                                      Date.now() - lastClaims[pool.id] < 24 * 60 * 60 * 1000)
+                                  }
+                                  style={{
+                                    marginTop: "10px",
+                                    width: "100%",
+                                    borderRadius: "10px",
+                                    background:
+                                      lastClaims[pool.id] &&
+                                      Date.now() - lastClaims[pool.id] < 24 * 60 * 60 * 1000
+                                        ? "#ccc"
+                                        : "#28a745",
+                                    color: "#000",
+                                    fontWeight: "bold",
+                                    cursor:
+                                      lastClaims[pool.id] &&
+                                      Date.now() - lastClaims[pool.id] < 24 * 60 * 60 * 1000
+                                        ? "not-allowed"
+                                        : "pointer",
+                                  }}
+                                >
+                                  {lastClaims[pool.id] &&
+                                  Date.now() - lastClaims[pool.id] < 24 * 60 * 60 * 1000
+                                    ? "⏳ Claimed"
+                                    : "Claim Reward 🎟️"}
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        ) : (
+                          !isSmaller && (
+                            <button
+                              className="mainBtn"
+                              style={{
+                                marginTop: "10px",
+                                width: "100%",
+                                borderRadius: "10px",
+                                background: "#ffd700",
+                                color: "#000",
+                                fontWeight: "bold",
+                              }}
+                              onClick={() => handleBuyPool(pool)}
+                              disabled={loading}
+                            >
+                              {loading ? "Buying..." : "Upgrade"}
+                            </button>
+                          )
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
-                
-              ))}
-                <br/>
-                <br/>
-            </div>
+              );
+            })()}
           </div>
         </div>
       )}
-
     </div>
   );
 };

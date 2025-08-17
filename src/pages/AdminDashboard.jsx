@@ -294,27 +294,6 @@ const AdminDashboard = () => {
     }
   };
 
-// ⏰ Auto trigger rewards every day at 8:00 AM
-      useEffect(() => {
-        const checkAndReward = () => {
-          const now = new Date();
-          const hours = now.getHours();
-          const minutes = now.getMinutes();
-
-          if (hours === 8 && minutes === 0) {
-            setLoading(true);
-            poolsConfig.forEach(pool => {
-              const poolId = `pool_${pool.id}`;
-              rewardAll(poolId);
-            });
-          }
-        };
-
-        // check every minute
-        const interval = setInterval(checkAndReward, 60000);
-        return () => clearInterval(interval);
-      }, []);
-
   const getPlanName = (planId) => {
     if (planId === 1) return 'Silver Plan';
     if (planId === 2) return 'Gold Plan';
@@ -536,32 +515,6 @@ const AdminDashboard = () => {
   }
 };
 
-  const rewardAll = async (poolId) => {
-    const users = poolsData[poolId] || [];
-    const poolInfo = poolsConfig.find(p => `pool_${p.id}` === poolId);
-    const rewardAmt = poolInfo?.reward || 0;
-
-    for (const user of users) {
-      const userRef = doc(db, "users", user.uid);
-      const userSnap = await getDoc(userRef);
-
-      if (userSnap.exists()) {
-        const currentData = userSnap.data();
-
-        setLoading(true);
-
-        await updateDoc(userRef, {
-          wallet: Number(currentData.wallet || 0) + rewardAmt,
-          alertMessage: `🎁 You received $${rewardAmt} from ${poolId}!`,
-          alertTimestamp: serverTimestamp(),
-        });
-      }
-    }
-
-    alert(`✅ Rewards sent to all users in ${poolId}`);
-    setLoading(false);
-  };
-
   return (
     <div className="admin-dashboard">
       <header className="admin-header">
@@ -638,18 +591,11 @@ const AdminDashboard = () => {
           />  
 
           <h3>{selectedPool.toUpperCase()} Users</h3>
-          <button 
-            onClick={() => rewardAll(selectedPool)} 
-            disabled={loading || (new Date().getHours() === 8 && new Date().getMinutes() === 0)}
-          >
-            {loading ? 'Rewarding...' : 'Reward All'}
-          </button>
-          <table style={{ width: "100%", color: "#fff", borderCollapse: "collapse", marginTop: "10px"}}>
-            <thead>
+          <table style={{ width: "100%", color: "#fff", borderCollapse: "collapse", marginTop: "10px", border:'dashed 1px white'}}>
+            <thead >
               <tr>
                 <th>Name</th>
                 <th>Joined</th>
-               
               </tr>
             </thead>
             <tbody>
