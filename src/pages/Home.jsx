@@ -1,5 +1,5 @@
 import './styles/Home.css';
-import Logo from '../assets/Logo.png';
+import Logo from '../assets/FLogo.png';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useState, useRef } from 'react';  

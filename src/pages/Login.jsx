@@ -4,7 +4,9 @@ import { collection, query, where, getDocs } from 'firebase/firestore';
 import { auth, db } from '../firebase';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import Logo from '../assets/Logo.png';
+import Logo from '../assets/Text.png';
+import Logo2 from '../assets/Logo2.png';
+
 
 const Login = () => {
   const [formData, setFormData] = useState({ email: '', password: '' });
@@ -139,10 +141,16 @@ const Login = () => {
   return (
     <div style={styles.container}>
       <div style={styles.overlay}></div>
-      <img src={Logo} style={{width:'200px'}} />
             <div style={styles.card} className="fade-in">
-              <h2 style={styles.title}>Welcome back<br/>Login to your Account</h2>
-              <br/>
+              <h2 style={styles.title}><img src={Logo2} style={{width:'60px', marginLeft:'-5%'}} /> <br/>Login To<img src={Logo} style={{width:'120px', marginLeft:'-5%'}} /> </h2>
+             
+              {/* Typing Heading */}
+      <div style={styles.typingWrapper}>
+        <h1 style={styles.typingStatic}>
+          <span style={styles.typingDynamic}>{typingText}</span>
+          <span style={styles.cursor}>|</span>
+        </h1>
+      </div>
               {error && <p style={styles.error}>{error}</p>}
               {success && <p style={styles.success}>{success}</p>}
               <div style={styles.formWrapper}>
@@ -202,13 +210,7 @@ const Login = () => {
               </div>
             </div>
           <br/>
-          {/* Typing Heading */}
-      <div style={styles.typingWrapper}>
-        <h1 style={styles.typingStatic}>
-          <span style={styles.typingDynamic}>{typingText}</span>
-          <span style={styles.cursor}>|</span>
-        </h1>
-      </div>
+          
 
       
 
