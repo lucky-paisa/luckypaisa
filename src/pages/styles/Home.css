@@ -289,8 +289,10 @@
   right: 20px;
   display: flex;
   flex-direction: column;
+  bottom: 18px;
   gap: 10px;
-  z-index: 2000;
+  z-index: 99990;
+  pointer-events: none;  /* ✅ Prevent blocking clicks */
 }
 
 .toast {
@@ -301,7 +303,10 @@
   box-shadow: 0 4px 8px rgba(0,0,0,0.25);
   animation: slideIn 0.4s ease, fadeOut 1.0s ease 3.5s forwards;
   font-size: 14px;
+  margin-bottom: 10px;
+  pointer-events: auto; 
 }
+
 
 .toast-info {
   background: linear-gradient(135deg, #2196f3, #42a5f5);
@@ -457,20 +462,7 @@
   font-size: 1rem;}
 
 /* ---------- Toasts (nice look) ---------- */
-.toast-container {
-  position: fixed;
-  right: 18px;
-  bottom: 18px;
-}
 
-.toast {
-  margin-bottom: 10px;
-  padding: 10px 14px;
-  border-radius: 10px;
-  color: #071024;
-  font-weight: 700;
-  box-shadow: 0 8px 22px rgba(3,7,18,0.6);
-}
 
 /* type colours */
 .toast-success { background: #4ade80; }   /* green */
