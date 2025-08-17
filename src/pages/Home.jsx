@@ -980,7 +980,7 @@ const handleClaimReward = async (pool) => {
        <br/>
        <br/>
      
-          <p style={{textAlign:'center' , fontSize:'0.6rem'}}>© 2025 Velore. All rights reserved.</p> 
+          <p style={{textAlign:'center' , fontSize:'0.6rem'}}>© 2025 Velora. All rights reserved.</p> 
       
           
       {/* Modals */}
