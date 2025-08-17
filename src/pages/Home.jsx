@@ -1130,6 +1130,7 @@ const handleClaimReward = async (pool) => {
             <div className="profile-row">
               <span>💳 Wallet Address</span>
               <span style={{ wordBreak: "break-word", maxWidth: "220px", textAlign: "right" }}>
+                <br/>
                 {userData?.walletAddress || "N/A"}
               </span>
             </div>
