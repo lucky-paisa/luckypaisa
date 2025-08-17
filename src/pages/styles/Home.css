@@ -17,10 +17,6 @@
   flex-wrap: wrap;
 }
 
-.welcome {
-  font-size: 1.2rem;
-}
-
 .logoutBtn {
   background: #e53935;
   color: #fff;

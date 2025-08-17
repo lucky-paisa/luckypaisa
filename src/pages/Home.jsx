@@ -857,12 +857,12 @@ const handleClaimReward = async (pool) => {
       <div className="header" style={{display:'flex'}}>
         <div className="top-buttons">
           <button className="mainBtn" style={{borderRadius:'50px'}} onClick={() => setShowProfile(true)}>👤</button>
-           <h1 className="welcome">
-           Welcome, <span style={{ color: '#ffd700' , fontSize: '25px' }}>{user?.name || "Guest"}</span>
-          &nbsp; To <div><img src={Logo2} style={{width:'25px'}} /> <img src={Logo} style={{width:'100px', marginLeft:'-2%'}} /></div>
-        </h1>       
+          <div style={{display:'flex'}}><img src={Logo2} style={{width:'25px'}} /> <img src={Logo} style={{width:'100px'}} /></div>
         </div>
-        </div>
+        </div>  
+        <h1 style={{fontSize: '20px', fontWeight: 300, textAlign: 'center', margin: '10px 0'}}>Welcome&nbsp;
+             <span style={{ color: '#ffd700' , fontSize: '25px', fontWeight: 400 }}> {user?.name || "Guest"}</span> 
+            </h1> 
         <div className="announcement-wrap">
           <div className="marquee">
             <span>
