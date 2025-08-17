@@ -120,6 +120,10 @@ useEffect(() => {
     // keep user fields in state
     setUserData(data);
     setWallet(data.wallet || 0);
+    // ✅ Load pool claim times into state for countdown
+    if (data.poolClaims) {
+      setLastClaims(data.poolClaims);
+    }
     setWithdrawalAddress(data.walletAddress || '');
 
     // ALERT-only messages (approve/drop)
@@ -809,9 +813,20 @@ const handleClaimReward = async (pool) => {
   setClaiming(true);
 
   try {
-    const claimKey = `lastClaim_${user.uid}_pool_${pool.id}`;
-    const lastClaim = Number(localStorage.getItem(claimKey) || 0);
     const now = Date.now();
+
+    // 🔹 Get user from Firestore
+    const userRef = doc(db, "users", user.uid);
+    const userSnap = await getDoc(userRef);
+    if (!userSnap.exists()) return;
+
+    const data = userSnap.data();
+
+    // 🔹 Check last claim timestamp (Firestore first, fallback to localStorage)
+    const lastClaimFirestore = data?.poolClaims?.[pool.id] || 0;
+    const claimKey = `lastClaim_${user.uid}_pool_${pool.id}`;
+    const lastClaimLocal = Number(localStorage.getItem(claimKey) || 0);
+    const lastClaim = Math.max(lastClaimFirestore, lastClaimLocal);
 
     // ⏳ Check if 24h passed
     if (now - lastClaim < 24 * 60 * 60 * 1000) {
@@ -820,17 +835,13 @@ const handleClaimReward = async (pool) => {
       return;
     }
 
-    // 🔹 Get user from Firestore
-    const userRef = doc(db, "users", user.uid);
-    const userSnap = await getDoc(userRef);
-    if (!userSnap.exists()) return;
-
-    const data = userSnap.data();
+    // 🔹 Add reward
     const newBalance = (data.wallet || 0) + pool.reward;
 
-    // 🔹 Update Firestore
+    // 🔹 Update Firestore (wallet + lastClaim for this pool)
     await updateDoc(userRef, {
       wallet: newBalance,
+      [`poolClaims.${pool.id}`]: now, // ✅ Save last claim server-side
       alertMessage: `✅ Claimed daily reward $${pool.reward} from Pool ${pool.id}`,
       alertTimestamp: serverTimestamp(),
     });
@@ -851,6 +862,31 @@ const handleClaimReward = async (pool) => {
     setClaiming(false);
   }
 };
+
+const CountdownTimer = ({ targetTime }) => {
+  const [timeLeft, setTimeLeft] = useState(targetTime - Date.now());
+
+  useEffect(() => {
+    if (timeLeft <= 0) return;
+    const interval = setInterval(() => {
+      setTimeLeft(targetTime - Date.now());
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [targetTime]);
+
+  if (timeLeft <= 0) return <span style={{ color: "lime" }}>Ready ✅</span>;
+
+  const hours = Math.floor(timeLeft / (1000 * 60 * 60));
+  const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+  const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+
+  return (
+    <span style={{ color: "#ffcc00", fontSize: "13px" }}>
+      ⏳ {hours}h {minutes}m {seconds}s
+    </span>
+  );
+};
+
 
   return (
     <div className="container">
@@ -1426,36 +1462,43 @@ const handleClaimReward = async (pool) => {
                               <>
                                 <p style={{ color: "lime", fontWeight: "bold" }}>✅ Upgraded</p>
                                 <button
-                                  className="mainBtn"
-                                  onClick={() => handleClaimReward(pool)}
-                                  disabled={
-                                    claiming ||
-                                    (lastClaims[pool.id] &&
-                                      Date.now() - lastClaims[pool.id] < 24 * 60 * 60 * 1000)
-                                  }
-                                  style={{
-                                    marginTop: "10px",
-                                    width: "100%",
-                                    borderRadius: "10px",
-                                    background:
-                                      lastClaims[pool.id] &&
-                                      Date.now() - lastClaims[pool.id] < 24 * 60 * 60 * 1000
-                                        ? "#ccc"
-                                        : "#28a745",
-                                    color: "#000",
-                                    fontWeight: "bold",
-                                    cursor:
-                                      lastClaims[pool.id] &&
-                                      Date.now() - lastClaims[pool.id] < 24 * 60 * 60 * 1000
-                                        ? "not-allowed"
-                                        : "pointer",
-                                  }}
-                                >
-                                  {lastClaims[pool.id] &&
-                                  Date.now() - lastClaims[pool.id] < 24 * 60 * 60 * 1000
-                                    ? "⏳ Claimed"
-                                    : "Claim Reward 🎟️"}
-                                </button>
+                                className="mainBtn"
+                                onClick={() => handleClaimReward(pool)}
+                                disabled={
+                                  claiming ||
+                                  (lastClaims[pool.id] &&
+                                    Date.now() - lastClaims[pool.id] < 24 * 60 * 60 * 1000)
+                                }
+                                style={{
+                                  marginTop: "10px",
+                                  width: "100%",
+                                  borderRadius: "10px",
+                                  background:
+                                    lastClaims[pool.id] &&
+                                    Date.now() - lastClaims[pool.id] < 24 * 60 * 60 * 1000
+                                      ? "#ccc"
+                                      : "#28a745",
+                                  color: "#000",
+                                  fontWeight: "bold",
+                                  cursor:
+                                    lastClaims[pool.id] &&
+                                    Date.now() - lastClaims[pool.id] < 24 * 60 * 60 * 1000
+                                      ? "not-allowed"
+                                      : "pointer",
+                                }}
+                              >
+                                {lastClaims[pool.id] &&
+                                Date.now() - lastClaims[pool.id] < 24 * 60 * 60 * 1000
+                                  ? "⏳ Claimed"
+                                  : "Claim Reward 🎟️"}
+                              </button>
+
+                              {/* Countdown (only if user has claimed before) */}
+                              {lastClaims[pool.id] && (
+                                <div style={{ marginTop: "6px" }}>
+                                  <CountdownTimer targetTime={lastClaims[pool.id] + 24 * 60 * 60 * 1000} />
+                                </div>
+                              )}
                               </>
                             )}
                           </div>
