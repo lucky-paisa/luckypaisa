@@ -136,12 +136,10 @@ const Login = () => {
     setForgotLoading(false);
   };
 
-
   return (
     <div style={styles.container}>
       <div style={styles.overlay}></div>
       <img src={Logo} style={{width:'200px'}} />
-      
             <div style={styles.card} className="fade-in">
               <h2 style={styles.title}>Welcome back<br/>Login to your Account</h2>
               <br/>

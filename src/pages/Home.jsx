@@ -860,7 +860,7 @@ const handleClaimReward = async (pool) => {
            Welcome, <span style={{ color: '#ffd700' , fontSize: '25px' }}>{user?.name || "Guest"}</span>
         </h1>       
         </div>
-           <img src={Logo} style={{width:'90px', marginLeft: 'auto'}} />
+            <img src={Logo} style={{width:'120px', marginLeft: 'auto'}} />
         </div>
         <div className="announcement-wrap">
           <div className="marquee">
@@ -885,7 +885,6 @@ const handleClaimReward = async (pool) => {
       <br/>
 
       <div className="row">
-        
         <div className="box" style={{display:'flex', background:'#324674ff'}}>
           
           <div style={{width:'50%'}}>
@@ -1002,21 +1001,50 @@ const handleClaimReward = async (pool) => {
       )}
 
       {showWithdrawModal && (
-        <div className="modalOverlay">
-          <div className="modal">
-            <h3>Request Withdrawal</h3>
-            <input
-              type="number"
-              className="input"
-              placeholder="Enter amount"
-              value={withdrawAmount}
-              onChange={(e) => setWithdrawAmount(e.target.value)}
-            />
-            <button className="primaryBtn" onClick={handleWithdrawRequest} disabled={loading}>{loading ? 'Sending...' : 'Withdraw'}</button>
-            <button className="cancelBtn" onClick={() => setShowWithdrawModal(false)}>Cancel</button>
-          </div>
+      <div className="modalOverlay">
+        <div className="modal">
+          <h3>Request Withdrawal</h3>
+          <input
+            type="number"
+            className="input"
+            placeholder="Enter amount"
+            value={withdrawAmount}
+            onChange={(e) => setWithdrawAmount(e.target.value)}
+          />
+
+          {/* Error conditions */}
+          {!userData?.walletAddress && (
+            <p style={{ color: "red", fontSize: "14px" }}>
+              ⚠️ Please add your wallet address first!
+            </p>
+          )}
+          {withdrawAmount > 0 && withdrawAmount < 50 && (
+            <p style={{ color: "red", fontSize: "14px" }}>
+              ⚠️ Minimum withdrawal amount is $50
+            </p>
+          )}
+
+          <button
+            className="primaryBtn"
+            onClick={handleWithdrawRequest}
+            disabled={
+              loading ||
+              !userData?.walletAddress ||      // ❌ Block if no wallet
+              withdrawAmount < 50              // ❌ Block if < $50
+            }
+          >
+            {loading ? "Sending..." : "Withdraw"}
+          </button>
+
+          <button
+            className="cancelBtn"
+            onClick={() => setShowWithdrawModal(false)}
+          >
+            Cancel
+          </button>
         </div>
-      )}
+      </div>
+    )}
 
       {showAddressModal && (
         <div className="modalOverlay">
