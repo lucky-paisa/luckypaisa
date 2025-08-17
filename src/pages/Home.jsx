@@ -17,7 +17,8 @@ import {
   onSnapshot,
   getDoc, 
   setDoc,
-  arrayUnion
+  arrayUnion,
+  deleteDoc
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import { auth } from "../firebase";
@@ -59,7 +60,8 @@ const Home = () => {
   const [showPools, setShowPools] = useState(false);
   const [claiming, setClaiming] = useState(false);
   const [lastClaims, setLastClaims] = useState({});
-  
+  const [userLoaded, setUserLoaded] = useState(false);
+
 
   // 📌 Combine all history into one array
 const combinedHistory = useMemo(() => {
@@ -194,7 +196,7 @@ useEffect(() => {
       setAnnouncements([]);
       showTemporaryAnnouncement('📣 No current winner announcements.');
     }
-
+  setUserLoaded(true);
   });
 
 
@@ -234,9 +236,8 @@ const unsubscribePurchases = onSnapshot(purchasesRef, async (querySnapshot) => {
     setPendingPlanIds(newPending);
 
     // ✅ Show announcement
-    const planNames = approvedPlans.map(p => planNameMap[p.planId] || `Plan ${p.planId}`).join(', ');
-    showToast(`✅ Your ${planNames} has been approved!`, 'success');
-
+    const planNames = approvedPlans.map(p => planNameMap[p.planId] || `${formatPlanName(p.planId)}`).join(', ');
+     showToast(`✅ Your ${planNames} has been approved!`, 'success');
 
   }
 });
@@ -423,7 +424,7 @@ useEffect(() => {
   // ✅ 1. Update user's wallet and purchases
   const updatedPurchases = [
     ...purchases,
-    { planId: selectedPlan.id, status: 'approved', purchasedAt: Date.now() }
+    { planId: selectedPlan.id, status: 'approved', purchasedAt: Date.now() },
   ];
 
   await updateDoc(doc(db, 'users', user.uid), {
@@ -731,12 +732,17 @@ const handleBuyPool = async (pool) => {
   if (!user) return;
 
   try {
+    // 🚫 Prevent double buy (local guard)
+    if (purchasedPools.includes(pool.id)) {
+      showToast(`❌ You already purchased Pool ${pool.id}`, "error");
+      return;
+    }
+
     const userRef = doc(db, "users", user.uid);
     const userSnap = await getDoc(userRef);
 
     if (!userSnap.exists()) {
       showToast("User not found in database.", "error");
-
       return;
     }
 
@@ -748,17 +754,14 @@ const handleBuyPool = async (pool) => {
       return;
     }
 
-    // Deduct balance
+    // Deduct wallet
     const newBalance = walletBalance - pool.price;
 
-   // 2️⃣ Remove smaller pools from user’s purchases
-  const newPurchases = (userDataFromDb.purchases || [])
-    .filter(p => !String(p.planId).startsWith("pool_") || Number(p.planId.split("_")[1]) >= pool.id);
+    // Filter out smaller pools from purchases
+    const newPurchases = (userDataFromDb.purchases || [])
+      .filter(p => !String(p.planId).startsWith("pool_") || Number(p.planId.split("_")[1]) >= pool.id);
 
-  // 3️⃣ Update user doc with filtered purchases
-  await updateDoc(userRef, {
-    wallet: newBalance,
-    purchases: [
+    const updatedPurchases = [
       ...newPurchases,
       {
         planId: `pool_${pool.id}`,
@@ -766,10 +769,15 @@ const handleBuyPool = async (pool) => {
         reward: pool.reward,
         purchasedAt: Date.now()
       }
-    ]
-  });
+    ];
 
-    // 2️⃣ Add entry to purchases collection (so it persists like other plans)
+    // Update user doc
+    await updateDoc(userRef, {
+      wallet: newBalance,
+      purchases: updatedPurchases
+    });
+
+    // Add new purchase entry
     await addDoc(collection(db, "purchases"), {
       uid: user.uid,
       userName: userDataFromDb.name || "Unknown",
@@ -781,7 +789,22 @@ const handleBuyPool = async (pool) => {
       approvedAt: serverTimestamp()
     });
 
-    // 3️⃣ Add user to pool_X/users subcollection
+    // ❌ Delete old pool purchases for this user from purchases collection
+    const purchasesRef = collection(db, "purchases");
+    const q = query(purchasesRef, where("uid", "==", user.uid), where("type", "==", "pool"));
+
+    const oldPurchasesSnap = await getDocs(q);
+    oldPurchasesSnap.forEach(async (docSnap) => {
+      const planId = docSnap.data().planId;
+      const planNumber = Number(planId.split("_")[1]);
+
+      // If it's a smaller pool than the one just bought → delete it
+      if (planNumber < pool.id) {
+        await deleteDoc(docSnap.ref);
+      }
+    });
+
+    // ✅ Add user to NEW pool (admin side)
     await setDoc(doc(db, "pools", `pool_${pool.id}`, "users", user.uid), {
       uid: user.uid,
       userName: userDataFromDb.name || "Unknown",
@@ -789,18 +812,29 @@ const handleBuyPool = async (pool) => {
       joinedAt: serverTimestamp()
     });
 
-    // 4️⃣ Update local state instantly
+    // ❌ Then try removing smaller pools (safe cleanup)
+    for (let i = 1; i < pool.id; i++) {
+      try {
+        await deleteDoc(doc(db, "pools", `pool_${i}`, "users", user.uid));
+      } catch (err) {
+        console.warn(`Pool cleanup failed for pool_${i}:`, err);
+      }
+    }
+
+    // Update local state
     setWallet(newBalance);
     setPurchases(updatedPurchases);
     setPurchasedPools(prev => [...prev, pool.id]);
-    showToast(`✅ Your Pool ${pool.id} have been Purchased!`, 'success');
+
+    showToast(`✅ Your ${formatPlanName(`pool_${pool.id}`)} has been approved!`, "success");
+
+    return;
+
   } catch (error) {
     console.error("Error buying pool:", error);
     showToast("❌ Error buying pool. Please try again.", "error");
   }
 };
-
-
 
 const planNameMap = {
   1: "Silver Plan",
@@ -885,6 +919,16 @@ const CountdownTimer = ({ targetTime }) => {
       ⏳ {hours}h {minutes}m {seconds}s
     </span>
   );
+};
+
+
+// 🏆 Format pool name nicely
+const formatPlanName = (planId) => {
+  if (planId.startsWith("pool_")) {
+    const num = planId.split("_")[1];
+    return `🏆 Pool ${num}`;
+  }
+  return planId; // fallback for non-pool items
 };
 
 
@@ -1260,9 +1304,10 @@ const CountdownTimer = ({ targetTime }) => {
                   {purchases.map((purchase, index) => (
                     <div className="purchase-card" key={index} style={{display:'flex'}}>
 
-                      <h3 className="purchase-title">
-                        {planNameMap[purchase.planId] || ` ${purchase.planId}`}
-                      </h3>
+                    <h3 className="purchase-title">
+                      {planNameMap[purchase.planId] || formatPlanName(purchase.planId)}
+                    </h3>
+
                       <p className="purchase-date" style={{marginLeft: 'auto'}}><span className="status-approved"> ✅🛍️ </span></p>
                     </div> 
                   ))}
@@ -1515,9 +1560,9 @@ const CountdownTimer = ({ targetTime }) => {
                                 fontWeight: "bold",
                               }}
                               onClick={() => handleBuyPool(pool)}
-                              disabled={loading}
+                              disabled={!userLoaded || loading || pool.id < maxPool || purchasedPools.includes(pool.id)}
                             >
-                              {loading ? "Buying..." : "Upgrade"}
+                              {loading ? "Buying..." : !userLoaded ? "Loading..." : pool.id < maxPool ? "Disabled" : purchasedPools.includes(pool.id) ? "Already Bought" : "Upgrade"}
                             </button>
                           )
                         )}
