@@ -23,10 +23,6 @@ const Signup = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    document.title = 'Sign Up | Lucky Paisa';
-  }, []);
-
   const handleChange = (e) => {
     setFormData((prev) => ({
       ...prev,

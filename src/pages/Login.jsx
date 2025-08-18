@@ -5,7 +5,7 @@ import { auth, db } from '../firebase';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Logo from '../assets/Text.png';
-import Logo2 from '../assets/Logo2.png';
+import Logo2 from '../assets/Logo.png';
 
 
 const Login = () => {
@@ -35,10 +35,6 @@ const Login = () => {
 
   const { login } = useAuth();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    document.title = 'Login | Lucky Paisa';
-  }, []);
 
   // Typing animation effect
   useEffect(() => {
@@ -142,7 +138,7 @@ const Login = () => {
     <div style={styles.container}>
       <div style={styles.overlay}></div>
             <div style={styles.card} className="fade-in">
-              <h2 style={styles.title}><img src={Logo2} style={{width:'60px'}} /> <br/>Login To<img src={Logo} style={{width:'120px', marginLeft:'-5%'}} /> </h2>
+              <h2 style={styles.title}><img src={Logo2} style={{width:'60px', marginBottom:'10px'}} /> <br/>Login To&nbsp;<img src={Logo} style={{width:'50px'}} /> </h2>
              
               {/* Typing Heading */}
       <div style={styles.typingWrapper}>
