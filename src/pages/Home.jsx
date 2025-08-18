@@ -937,7 +937,7 @@ const formatPlanName = (planId) => {
       <div className="header" style={{display:'flex'}}>
         <div className="top-buttons">
           <button className="mainBtn" style={{borderRadius:'50px'}} onClick={() => setShowProfile(true)}>👤</button>
-          <div style={{display:'flex'}}><img src={Logo2} style={{width:'40px', height:'40px'}} /> <img src={Logo} style={{width:'70px', height:'30px', marginTop:'10%'}} /></div>
+          <div style={{display:'flex'}}><img src={Logo2} style={{width:'30px'}} /> <img src={Logo} style={{width:'50px', marginTop:'10%'}} /></div>
         </div>
         </div>  
         <h1 style={{fontSize: '20px', fontWeight: 300, textAlign: 'center', margin: '10px 0'}}>Welcome&nbsp;
