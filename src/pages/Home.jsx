@@ -936,11 +936,31 @@ const formatPlanName = (planId) => {
     <div className="container">
       <div className="header" style={{display:'flex'}}>
         <div className="top-buttons">
+          
           <button className="mainBtn" style={{borderRadius:'50px'}} onClick={() => setShowProfile(true)}>👤</button>
           <div style={{display:'flex'}}><img src={Logo2} style={{width:'25px'}} /> <img src={Logo} style={{width:'45px', marginTop:'10%'}} /></div>
         </div>
-        </div>  
-        <h1 style={{ color: '#ffd700' , fontSize: '16px', fontWeight: 300, textAlign: 'center', margin: '10px 0' }}> Welcome&nbsp; {user?.name || "Guest"}</h1> 
+        </div>
+        <div style={{ 
+        background: "#32467443", 
+        padding: "10px 15px", 
+        display: "flex", 
+        justifyContent: "space-between", 
+        borderRadius:'10px',
+        placeSelf:'center',
+        width:'70%',
+        justifyContent:'center',
+        marginTop:'2%',
+      }}>
+        <h1 style={{ 
+          color: "#ffd700", 
+          fontSize: "16px", 
+          fontWeight: 200, 
+          margin: 0 
+        }}>
+          🎉 Welcome {user?.name || "Guest"}
+        </h1>
+      </div>  
         <div className="announcement-wrap">
           <div className="marquee">
             <span>
@@ -963,12 +983,15 @@ const formatPlanName = (planId) => {
 
       <br/>
 
+      
+
       <div className="row">
         <div className="box" style={{display:'flex', background:'#324674ff'}}>
           
           <div style={{width:'50%'}}>
             <h4>Wallet balance</h4>
             <p className="wallet">${(Number(wallet) || 0).toFixed(2)}</p>
+            
           </div>
           
           <div style={{display: 'grid', gap: '20px', marginTop: '8px', width:'50%', height:'30%' }}>
@@ -976,9 +999,9 @@ const formatPlanName = (planId) => {
             <button className="mainBtn" style={{width:'90%'}} onClick={() => setShowWithdrawModal(true)}>📤 Cash out</button>
           </div>
         </div>
-          
 
       </div>
+
           <div  style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', rowGap:'85%' }}>
             <button className="mainBtn" style={{height:'250%',background:'#141414', border:'1px dashed #324674ff', justifyContent:'center', borderRadius:'10px' }} onClick={() => setShowPurchases(true)}>🛒 Purchases</button>
             <button className="mainBtn" style={{height:'250%',background:'#141414', border:'1px dashed #324674ff', justifyContent:'center', borderRadius:'10px' }} onClick={() => { setShowHistory(true); }}>📜 History</button>
