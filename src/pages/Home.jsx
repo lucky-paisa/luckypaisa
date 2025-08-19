@@ -1,6 +1,7 @@
 import './styles/Home.css';
 import Logo from '../assets/Text2.png';
 import Logo2 from '../assets/Logo.png';
+import Icon from "../assets/P Icon.png";
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useState, useRef } from 'react';  
@@ -943,7 +944,7 @@ const formatPlanName = (planId) => {
             onClick={() => setShowProfile(true)}
           >
             <img 
-              src="./src/assets/P Icon.png" 
+              src={Icon} 
               alt="Profile Icon" 
               style={{ width: '20px', height: '20px' }} 
             />
