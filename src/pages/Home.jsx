@@ -1022,7 +1022,7 @@ const formatPlanName = (planId) => {
       <br/>
       <br/>
       <h2 className="animated-heading">
-         Buy our exclusive plans <br/> <span className="typing">✓ {animatedText}</span></h2>
+         Buy our exclusive plans <br/> <span className="typing">✓ {animatedText}|</span></h2>
       <br/> 
       <div className="sliderContainer">
         {plans.map((plan) => (
