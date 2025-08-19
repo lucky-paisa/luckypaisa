@@ -1230,8 +1230,7 @@ const formatPlanName = (planId) => {
             </div>
             <div className="profile-row">
               <span>💳 Wallet Address</span>
-              <span style={{ wordBreak: "break-word", maxWidth: "220px", textAlign: "right" }}>
-                <br/>
+              <span style={{ wordBreak: "break-word", maxWidth: "200px", textAlign: "right" }}>
                 {userData?.walletAddress || "N/A"}
               </span>
             </div>
