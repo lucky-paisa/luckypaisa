@@ -995,7 +995,7 @@ const formatPlanName = (planId) => {
           </div>
           
           <div style={{display: 'grid', gap: '20px', marginTop: '8px', width:'50%', height:'30%' }}>
-            <button className="mainBtn" style={{width:'90%'}} onClick={() => setShowDepositModal(true)}>💱 Deposit in</button>
+            <button className="mainBtn" style={{width:'90%'}} onClick={() => setShowDepositModal(true)}>💱 Deposit</button>
             <button className="mainBtn" style={{width:'90%'}} onClick={() => setShowWithdrawModal(true)}>📤 Cash out</button>
           </div>
         </div>
