@@ -1318,17 +1318,44 @@ const formatPlanName = (planId) => {
             </div>
           </div>          
 
-          {/* Logout Button */}
+          {/* Logout / Login Button */}
           <div style={{ textAlign: "center", marginTop: "25px" }}>
-            <button 
-              className="logoutBtn" 
-              onClick={handleLogout} 
-              disabled={loading} 
-              style={{ width: "100%", padding: "10px", borderRadius: "10px" }}
-            >
-              {loading ? "Bye..." : "🚪 Logout"}
-            </button>
+            {user ? (
+              // ✅ Show Logout if user is logged in
+              <button 
+                className="logoutBtn" 
+                onClick={handleLogout} 
+                disabled={loading} 
+                style={{ 
+                  width: "100%", 
+                  padding: "10px", 
+                  borderRadius: "10px", 
+                  background: "#d9534f",   // 🔴 red for logout
+                  color: "#fff", 
+                  fontWeight: "bold" 
+                }}
+              >
+                {loading ? "Bye..." : "🚪 Logout"}
+              </button>
+            ) : (
+              // ✅ Show Login if no user is logged in
+              <button 
+                onClick={() => navigate("/login")} 
+                style={{ 
+                  width: "100%", 
+                  padding: "10px", 
+                  borderRadius: "10px", 
+                  background: "green",    // 🟢 green for login
+                  color: "#fff", 
+                  fontWeight: "bold", 
+                  cursor: "pointer" 
+                }}
+              >
+                🔑 Login
+              </button>
+            )}
           </div>
+
         </div>
       </div>
     )}
