@@ -1022,7 +1022,7 @@ const formatPlanName = (planId) => {
       <br/>
       <br/>
       <h2 className="animated-heading">
-         Buy our exclusive plans <span className="typing">{animatedText}</span></h2>
+         Buy our exclusive plans <br/> <span className="typing">{animatedText}</span></h2>
       <br/> 
       <div className="sliderContainer">
         {plans.map((plan) => (
@@ -1230,6 +1230,7 @@ const formatPlanName = (planId) => {
             </div>
             <div className="profile-row">
               <span>💳 Wallet Address</span>
+              <br/>
               <span style={{ wordBreak: "break-word", maxWidth: "200px", textAlign: "right" }}>
                 {userData?.walletAddress || "N/A"}
               </span>
