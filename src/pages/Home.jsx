@@ -2,6 +2,7 @@ import './styles/Home.css';
 import Logo from '../assets/Text2.png';
 import Logo2 from '../assets/Logo.png';
 import Icon from "../assets/P Icon.png";
+import L_Icon from "../assets/L Icon.png";
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useState, useRef } from 'react';  
@@ -952,6 +953,17 @@ const formatPlanName = (planId) => {
 
           <div style={{display:'flex'}}><img src={Logo2} style={{width:'25px'}} /> <img src={Logo} style={{width:'45px', marginTop:'10%'}} /></div>
         </div>
+        <button 
+          style={{ borderRadius: '30px', background: 'transparent', border: 'none', cursor: 'pointer' }} 
+          onClick={handleLogout}
+        >
+          <img 
+            src={L_Icon} 
+            alt="Logout Icon" 
+            style={{ width: '20px', height: '20px' }} 
+          />
+        </button>
+
         </div>
         <div style={{ 
         background: "#32467443", 
