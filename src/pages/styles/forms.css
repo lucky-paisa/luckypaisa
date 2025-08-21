@@ -1,0 +1,265 @@
+/* forms.css - shared by Login, Signup, ResetPassword */
+
+/* Container */
+.form-container {
+  position: relative;
+  min-height: 100vh;
+  background: linear-gradient(to bottom right, #0f2027, #203a43, #2c5364);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 1rem;
+  font-family: inherit;
+}
+
+/* Overlay */
+.form-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.3);
+  z-index: 1;
+}
+
+/* Card */
+.form-card {
+  position: relative;
+  z-index: 2;
+  background: #1f2937;
+  color: #f3f4f6;
+  padding: 2rem;
+  border-radius: 15px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+  width: 85%;
+  max-width: 360px;
+  animation: fadeIn 1s ease-out;
+  text-align: center;
+}
+
+/* Title */
+.form-title {
+  text-align: center;
+  margin-bottom: 1rem;
+  font-size: 1.6rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Logo sizes */
+.logo-main {
+  width: 60px;
+  margin-bottom: 10px;
+}
+.logo-text {
+  width: 50px;
+}
+
+/* Typing heading */
+.typing-wrapper {
+  z-index: 2;
+  margin-bottom: 1rem;
+  text-align: center;
+}
+.typing-static {
+  font-size: 1.4rem;
+  color: #f9fafb;
+  font-weight: bold;
+  margin: 0;
+}
+.typing-dynamic {
+  color: #4caf50;
+}
+.cursor {
+  display: inline-block;
+  color: #38bdf8;
+  animation: blink 1s step-start infinite;
+}
+
+/* Error + Success */
+.form-error {
+  color: #f87171;
+  text-align: center;
+  margin-bottom: 1rem;
+  font-size: 15px;
+}
+.form-success {
+  color: #34d399;
+  text-align: center;
+  margin-bottom: 1rem;
+  font-size: 15px;
+}
+
+/* Form wrapper */
+.form-wrapper {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.form-box {
+  width: 100%;
+}
+
+/* Floating inputs */
+.floating-group {
+  position: relative;
+  width: 100%;
+  margin-bottom: 1.5rem;
+}
+.floating-input {
+  width: 100%;
+  padding: 1rem 0.8rem 0.5rem;
+  border: none;
+  border-bottom: 2px solid #9ca3af;
+  background-color: transparent;
+  color: #f9fafb;
+  font-size: 1rem;
+  outline: none;
+}
+
+.floating-input::placeholder { /* used to enable :placeholder-shown */
+  color: transparent;
+}
+
+.floating-label {
+  position: absolute;
+  left: 10px;
+  top: 14px;
+  color: #9ca3af;
+  font-size: 1rem;
+  pointer-events: none;
+  transition: all 0.18s ease;
+}
+
+/* if we leave label in the DOM, move it when input has content or focused */
+.floating-input:focus + .floating-label,
+.floating-input:not(:placeholder-shown) + .floating-label {
+  top: -10px;
+  font-size: 0.82rem;
+  color: #ffd700;
+}
+
+/* show/hide password toggle */
+.toggle-btn {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #60a5fa;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+/* primary button */
+.form-button {
+  width: 100%;
+  padding: 0.9rem;
+  background-color: #4CAF50;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-weight: bold;
+  font-size: 1rem;
+  cursor: pointer;
+}
+.form-button[disabled] {
+  background-color: #2e7d32;
+  cursor: not-allowed;
+}
+
+/* footer text */
+.footer-text {
+  text-align: center;
+  margin-top: 1rem;
+  font-size: 0.95rem;
+  color: #d1d5db;
+}
+
+/* Modal */
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: rgba(0,0,0,0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+}
+
+.modal {
+  background: #1f2937;
+  padding: 2rem;
+  border-radius: 10px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+  width: 90%;
+  max-width: 400px;
+  color: #f3f4f6;
+  text-align: center;
+}
+.modal-title {
+  margin-bottom: 1rem;
+  font-size: 1.3rem;
+}
+.modal-input {
+  width: 100%;
+  padding: 0.8rem;
+  margin-bottom: 1rem;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 1rem;
+  background: #111827;
+  color: #f3f4f6;
+}
+.modal-button {
+  width: 100%;
+  padding: 0.8rem;
+  background-color: #4CAF50;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+  cursor: pointer;
+}
+.modal-close {
+  background-color: #9ca3af;
+  color: #1f2937;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+/* fade in animation */
+@keyframes fadeIn {
+  0% { opacity: 0; transform: translateY(30px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+/* typing cursor blink */
+@keyframes blink {
+  50% { opacity: 0; }
+}
+
+/* small utility */
+.center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* responsive */
+@media (max-width: 420px) {
+  .form-card {
+    padding: 1.4rem;
+    border-radius: 12px;
+  }
+}

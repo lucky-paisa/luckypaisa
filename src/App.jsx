@@ -5,6 +5,7 @@ import Login from './pages/Login';
 import Home from './pages/Home';
 import AdminRoute from "./routes/AdminRoute";
 import AdminDashboard from './pages/AdminDashboard';
+import ResetPassword from "./pages/ResetPassword";
 
 function App() {
   useEffect(() => {
@@ -22,6 +23,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/home" element={<Home />} />
         <Route path="/admin" element={ <AdminRoute> <AdminDashboard /> </AdminRoute> } />
+        <Route path="/reset-password" element={<ResetPassword />} />
       </Routes>
     </div>
   );
