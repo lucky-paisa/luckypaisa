@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState } from 'react';
 
 // Create context
 const AuthContext = createContext();
@@ -11,6 +11,7 @@ export const AuthProvider = ({ children }) => {
   });
 
   const login = (userData) => {
+    // userData should include { uid, email, name, ..., isAdmin }
     setUser(userData);
     localStorage.setItem('user', JSON.stringify(userData));
   };

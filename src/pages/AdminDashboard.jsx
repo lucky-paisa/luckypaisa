@@ -4,6 +4,8 @@ import { auth, db } from '../firebase';
 import {collection, query, where, getDocs, arrayUnion, getDoc, orderBy, updateDoc, addDoc, doc, deleteDoc, increment, setDoc, onSnapshot, Timestamp, serverTimestamp} from 'firebase/firestore';
 import './styles/AdminDashboard.css';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+
 
 // Add after your existing imports
 const poolsConfig = [
@@ -39,7 +41,11 @@ const AdminDashboard = () => {
   const [loading, setLoading] = useState(false);
   const [totalEarnings, setTotalEarnings] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
+  const { logout } = useAuth();
 
+
+  const { user } = useAuth();
+    if (!user?.isAdmin) return <div style={{padding:16}}>Unauthorized – admin access only.</div>;
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -159,6 +165,7 @@ const AdminDashboard = () => {
 
   const handleLogout = async () => {
     localStorage.removeItem('isAdmin');
+    logout();
     await signOut(auth);
     navigate('/login');
   };

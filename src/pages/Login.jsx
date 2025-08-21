@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react';
 import { signInWithEmailAndPassword , sendPasswordResetEmail  } from 'firebase/auth';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, getDoc } from "firebase/firestore";
 import { auth, db } from '../firebase';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Logo from '../assets/Text.png';
 import Logo2 from '../assets/Logo.png';
-
 
 const Login = () => {
   const [formData, setFormData] = useState({ email: '', password: '' });
@@ -24,6 +23,7 @@ const Login = () => {
   const [charIndex, setCharIndex] = useState(0);
   const [phraseIndex, setPhraseIndex] = useState(0);
   const [deleting, setDeleting] = useState(false);
+  
 
   const phrases = [
     'great earnings',
@@ -67,50 +67,58 @@ const Login = () => {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    setSuccess('');
-    setLoginLoading(true);
+  e.preventDefault();
+  setError('');
+  setSuccess('');
+  setLoginLoading(true);
 
-    // Admin check
-    if (
-      formData.email === 'feedback.luckypaisa@gmail.com' &&
-      formData.password === 'LuckyPaisaAdmin786'
-    ) {
-      localStorage.setItem('isAdmin', 'true');
-      setSuccess('Admin login successful!');
-      setTimeout(() => navigate('/admin'), 1200);
-      setLoginLoading(false);
+  try {
+    // Firebase Auth login
+    const userCred = await signInWithEmailAndPassword(
+      auth,
+      formData.email,
+      formData.password
+    );
+    const user = userCred.user;
+
+    // ✅ Step 1: Check roles/{uid} to see if admin
+    const roleRef = doc(db, "roles", user.uid);
+    const roleSnap = await getDoc(roleRef);
+
+    if (roleSnap.exists() && roleSnap.data().isAdmin) {
+      // Admin login
+      const adminData = {
+        uid: user.uid,
+        email: user.email,
+        name: "Lucky Paisa Admin",
+        isAdmin: true
+      };
+      login(adminData);
+      setSuccess("Admin login successful!");
+      setTimeout(() => navigate("/admin"), 1200);
       return;
     }
 
-    try {
-      const userCred = await signInWithEmailAndPassword(
-        auth,
-        formData.email,
-        formData.password
-      );
-      const user = userCred.user;
+    // ✅ Step 2: If not admin, fetch from users collection
+    const usersRef = collection(db, "users");
+    const q = query(usersRef, where("email", "==", formData.email));
+    const snapshot = await getDocs(q);
 
-      const usersRef = collection(db, 'users');
-      const q = query(usersRef, where('email', '==', formData.email));
-      const snapshot = await getDocs(q);
-
-      if (!snapshot.empty) {
-        const userData = snapshot.docs[0].data();
-        login({ uid: user.uid, ...userData });
-        localStorage.setItem('isAdmin', 'false'); // Clear admin flag for normal users
-        setSuccess('Login successful!');
-        setTimeout(() => navigate('/home'), 1200);
-      } else {
-        setError('User data not found.');
-      }
-    } catch {
-      setError('Invalid email or password.');
-    } finally {
-      setLoginLoading(false);
+    if (!snapshot.empty) {
+      const userData = snapshot.docs[0].data();
+      login({ uid: user.uid, ...userData, isAdmin: false });
+      setSuccess("Login successful!");
+      setTimeout(() => navigate("/home"), 1200);
+    } else {
+      setError("User profile not found.");
     }
-  };
+  } catch (err) {
+    console.error("❌ Login error:", err);
+    setError("Invalid email or password.");
+  } finally {
+    setLoginLoading(false);
+  }
+};
 
   const handleForgotPassword = async () => {
     if (!modalEmail) return;
