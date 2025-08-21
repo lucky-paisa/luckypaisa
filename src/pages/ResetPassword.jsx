@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { confirmPasswordReset } from "firebase/auth";
 import { auth } from "../firebase";
@@ -18,6 +18,13 @@ const ResetPassword = () => {
 
   const navigate = useNavigate();
 
+  // ✅ Redirect if no valid oobCode is found (direct access to reset page not allowed)
+  useEffect(() => {
+    if (!oobCode) {
+      navigate("/login", { replace: true });
+    }
+  }, [oobCode, navigate]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -32,7 +39,9 @@ const ResetPassword = () => {
       setLoading(true);
       await confirmPasswordReset(auth, oobCode, password);
       setSuccess("Password has been reset successfully!");
-      setTimeout(() => navigate("/login"), 2000);
+
+      // ✅ Force redirect to login, replacing history so back button can't return here
+      setTimeout(() => navigate("/login", { replace: true }), 2000);
     } catch (err) {
       console.error("❌ Reset error:", err);
       setError("Failed to reset password. The link may be invalid or expired.");
