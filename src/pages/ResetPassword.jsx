@@ -84,7 +84,7 @@ const ResetPassword = () => {
               className="eye-btn"
               onClick={() => setShowPassword((prev) => !prev)}
             >
-              {showPassword ? "🙈" : "👁️"}
+              {showPassword ? "👁" : "⌣"}
             </button>
           </div>
 
