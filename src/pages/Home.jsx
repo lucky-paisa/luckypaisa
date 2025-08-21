@@ -6,6 +6,7 @@ import L_Icon from "../assets/L Icon.png";
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useState, useRef } from 'react';  
+import { sendPasswordResetEmail } from "firebase/auth";
 import { useMemo } from "react";
 import {
   doc,
@@ -1190,175 +1191,202 @@ const formatPlanName = (planId) => {
       )}
 
      {showProfile && (
-      <div className="modalOverlay" onClick={() => setShowProfile(false)}>
-        <div 
-          className="modal" 
-          onClick={(e) => e.stopPropagation()} 
-          style={{ 
-            maxHeight: "80vh", 
-            overflowY: "auto", 
-            background: "linear-gradient(135deg, #1f1f2e, #2a2a40)", 
-            borderRadius: "16px", 
-            padding: "20px", 
-            boxShadow: "0 8px 25px rgba(0,0,0,0.6)", 
-            position: "relative" // ✅ keeps close button absolute inside
-          }}
-        >
-          {/* Close Button */}
-          <button 
-            onClick={() => setShowProfile(false)} 
-            className="cancelBtn" 
+        <div className="modalOverlay" onClick={() => setShowProfile(false)}>
+          <div 
+            className="modal" 
+            onClick={(e) => e.stopPropagation()} 
             style={{ 
-              position: "absolute", // ✅ absolute instead of float
-              top: "15px", 
-              right: "15px", 
-              fontSize: "16px" 
+              maxHeight: "80vh", 
+              overflowY: "auto", 
+              background: "linear-gradient(135deg, #1f1f2e, #2a2a40)", 
+              borderRadius: "16px", 
+              padding: "20px", 
+              boxShadow: "0 8px 25px rgba(0,0,0,0.6)", 
+              position: "relative"
             }}
           >
-            ✖
-          </button>
-
-          {/* Profile Header */}
-          <div style={{ textAlign: "center", marginBottom: "20px" }}>
-            <div 
+            {/* Close Button */}
+            <button 
+              onClick={() => setShowProfile(false)} 
+              className="cancelBtn" 
               style={{ 
-                width: "90px", 
-                height: "90px", 
-                borderRadius: "50%", 
-                background: "linear-gradient(135deg, #ffd700, #ffb400)", 
-                display: "flex", 
-                alignItems: "center", 
-                justifyContent: "center", 
-                fontSize: "36px", 
-                fontWeight: "bold", 
-                color: "#000", 
-                margin: "0 auto 10px auto", // ✅ centered
-                boxShadow: "0 4px 12px rgba(0,0,0,0.5)"
+                position: "absolute", 
+                top: "15px", 
+                right: "15px", 
+                fontSize: "16px" 
               }}
             >
-              {userData?.name ? userData.name.charAt(0).toUpperCase() : "👤"}
-            </div>
-            <h2 style={{ margin: "10px 0 5px", color: "#ffd700" }}>
-              {userData?.name || "Guest User"}
-            </h2>
-            <p style={{ color: "#bbb", fontSize: "14px" }}>
-              {userData?.email || "No email set"}
-            </p>
-          </div>
+              ✖
+            </button>
 
-          {/* Profile Details */}
-          <div style={{ marginBottom: "15px" }}>
-            <div className="profile-row">
-              <span>📱 Phone</span>
-              <span>{userData?.phone || "N/A"}</span>
-            </div>
-            <div className="profile-row">
-              <span>💳 Wallet Address</span>
-              <span style={{ wordBreak: "break-word", maxWidth: "200px", textAlign: "right" }}>
-                {userData?.walletAddress || "N/A"}
-              </span>
-            </div>
-            <div className="profile-row">
-              <span>🧑‍🤝‍🧑 Reference</span>
-              <span>
-                {userData?.referenceBy
-                  ? (userData.referenceBy === "SELF" 
-                      ? "SELF" 
-                      : userData.referenceName || userData.referenceBy)
-                  : "SELF"}
-              </span>
-            </div>
-          </div>
-
-          {/* Invite Link Section */}
-          <div style={{ marginTop: "20px" }}>
-            <label style={{ fontWeight: "bold", color: "#ffd700" }}>🔗 Invite Link</label>
-            <div 
-              style={{ 
-                display: "flex", 
-                alignItems: "stretch", // ✅ makes input & button same height
-                gap: "0", 
-                marginTop: "5px" 
-              }}
-            >
-              <input
-                type="text"
-                value={`${window.location.origin}/signup?ref=${user?.uid}`}
-                readOnly
+            {/* Profile Header */}
+            <div style={{ textAlign: "center", marginBottom: "20px" }}>
+              <div 
                 style={{ 
-                  flex: 1, 
-                  background: "#2c2c44", 
-                  color: "#fff",
-                  padding: "0 12px", 
-                  border: "1px solid #444",
-                  borderRight: "none",          // ✅ merges seamlessly with button
-                  borderRadius: "6px 0 0 6px",  // ✅ rounded left only
-                  fontSize: "14px",
-                  padding:"10px"
-                }}
-              />
-              <button
-                onClick={() => {
-                  navigator.clipboard.writeText(`${window.location.origin}/signup?ref=${user?.uid}`);
-                  showToast("Referral link copied!", "success");
-                }}
-                style={{ 
-                  background: "#2196F3", 
-                  color: "#fff",
-                  border: "1px solid #444",
-                  borderLeft: "none",           // ✅ merges with input
-                  borderRadius: "0 6px 6px 0",  // ✅ rounded right only
-                  padding: "0 15px", 
-                  cursor: "pointer",
-                  fontWeight: "bold"
-                }}
-              >
-                📋 Copy
-              </button>
-            </div>
-          </div>          
-
-          {/* Logout / Login Button */}
-          <div style={{ textAlign: "center", marginTop: "25px" }}>
-            {user ? (
-              // ✅ Show Logout if user is logged in
-              <button 
-                className="logoutBtn" 
-                onClick={handleLogout} 
-                disabled={loading} 
-                style={{ 
-                  width: "100%", 
-                  padding: "10px", 
-                  borderRadius: "10px", 
-                  background: "#d9534f",   // 🔴 red for logout
-                  color: "#fff", 
-                  fontWeight: "bold" 
-                }}
-              >
-                {loading ? "Bye..." : "🚪 Logout"}
-              </button>
-            ) : (
-              // ✅ Show Login if no user is logged in
-              <button 
-                onClick={() => navigate("/login")} 
-                style={{ 
-                  width: "100%", 
-                  padding: "10px", 
-                  borderRadius: "10px", 
-                  background: "green",    // 🟢 green for login
-                  color: "#fff", 
+                  width: "90px", 
+                  height: "90px", 
+                  borderRadius: "50%", 
+                  background: "linear-gradient(135deg, #ffd700, #ffb400)", 
+                  display: "flex", 
+                  alignItems: "center", 
+                  justifyContent: "center", 
+                  fontSize: "36px", 
                   fontWeight: "bold", 
-                  cursor: "pointer" 
+                  color: "#000", 
+                  margin: "0 auto 10px auto", 
+                  boxShadow: "0 4px 12px rgba(0,0,0,0.5)"
                 }}
               >
-                🔑 Login
-              </button>
-            )}
-          </div>
+                {userData?.name ? userData.name.charAt(0).toUpperCase() : "👤"}
+              </div>
+              <h2 style={{ margin: "10px 0 5px", color: "#ffd700" }}>
+                {userData?.name || "Guest User"}
+              </h2>
+              <p style={{ color: "#bbb", fontSize: "14px" }}>
+                {userData?.email || "No email set"}
+              </p>
+            </div>
 
+            {/* Profile Details */}
+            <div style={{ marginBottom: "15px" }}>
+              <div className="profile-row">
+                <span>📱 Phone</span>
+                <span>{userData?.phone || "N/A"}</span>
+              </div>
+              <div className="profile-row">
+                <span>💳 Wallet Address</span>
+                <span style={{ wordBreak: "break-word", maxWidth: "200px", textAlign: "right" }}>
+                  {userData?.walletAddress || "N/A"}
+                </span>
+              </div>
+              <div className="profile-row">
+                <span>🧑‍🤝‍🧑 Reference</span>
+                <span>
+                  {userData?.referenceBy
+                    ? (userData.referenceBy === "SELF" 
+                        ? "SELF" 
+                        : userData.referenceName || userData.referenceBy)
+                    : "SELF"}
+                </span>
+              </div>
+            </div>
+
+            {/* Invite Link Section */}
+            <div style={{ marginTop: "20px" }}>
+              <label style={{ fontWeight: "bold", color: "#ffd700" }}>🔗 Invite Link</label>
+              <div 
+                style={{ 
+                  display: "flex", 
+                  alignItems: "stretch", 
+                  gap: "0", 
+                  marginTop: "5px" 
+                }}
+              >
+                <input
+                  type="text"
+                  value={`${window.location.origin}/signup?ref=${user?.uid}`}
+                  readOnly
+                  style={{ 
+                    flex: 1, 
+                    background: "#2c2c44", 
+                    color: "#fff",
+                    padding: "10px 12px", 
+                    border: "1px solid #444",
+                    borderRight: "none", 
+                    borderRadius: "6px 0 0 6px", 
+                    fontSize: "14px"
+                  }}
+                />
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(`${window.location.origin}/signup?ref=${user?.uid}`);
+                    showToast("Referral link copied!", "success");
+                  }}
+                  style={{ 
+                    background: "#2196F3", 
+                    color: "#fff",
+                    border: "1px solid #444",
+                    borderLeft: "none", 
+                    borderRadius: "0 6px 6px 0", 
+                    padding: "0 15px", 
+                    cursor: "pointer",
+                    fontWeight: "bold"
+                  }}
+                >
+                  📋 Copy
+                </button>
+              </div>
+            </div>          
+
+            {/* Profile Actions */}
+            <div style={{ textAlign: "center", marginTop: "25px" }}>
+              {user && (
+                <button
+                  onClick={() => {
+                    setAlertModal({
+                      show: true,
+                      message: "Do you want to reset your password?",
+                      onConfirm: async () => {
+                        try {
+                          await sendPasswordResetEmail(auth, user.email);
+                          showToast("📩 Password reset email sent!", "success");
+                        } catch (err) {
+                          showToast("❌ Failed to send reset email", "error");
+                          console.error("Reset email error:", err);
+                        }
+                      }
+                    });
+                  }}
+                  style={{
+                    width: "100%",
+                    padding: "10px",
+                    borderRadius: "10px",
+                    background: "#324674",
+                    color: "#fff",
+                    fontWeight: "bold",
+                    marginBottom: "10px"
+                  }}
+                >
+                  🔑 Change Password
+                </button>
+              )}
+
+              {user ? (
+                <button 
+                  className="logoutBtn" 
+                  onClick={handleLogout} 
+                  disabled={loading} 
+                  style={{ 
+                    width: "100%", 
+                    padding: "10px", 
+                    borderRadius: "10px", 
+                    background: "#d9534f", 
+                    color: "#fff", 
+                    fontWeight: "bold" 
+                  }}
+                >
+                  {loading ? "Bye..." : "🚪 Logout"}
+                </button>
+              ) : (
+                <button 
+                  onClick={() => navigate("/login")} 
+                  style={{ 
+                    width: "100%", 
+                    padding: "10px", 
+                    borderRadius: "10px", 
+                    background: "green", 
+                    color: "#fff", 
+                    fontWeight: "bold", 
+                    cursor: "pointer" 
+                  }}
+                >
+                  🔑 Login
+                </button>
+              )}
+            </div>
+          </div>
         </div>
-      </div>
-    )}
+      )}
 
       {/* Purchases Modal */}
       {showPurchases && (
@@ -1435,16 +1463,32 @@ const formatPlanName = (planId) => {
         ))}
       </div>
 
-      {/* Alert Modal */}
       {alertModal.show && (
         <div className="modalOverlay">
           <div className="modal">
-            <h3>📢 Announcement</h3>
+            <h3>📢 Confirmation</h3>
             <p>{alertModal.message}</p>
-            <button className="primaryBtn" onClick={handleAlertOk}>OK</button>
+            <div style={{ display: "flex", gap: "10px", justifyContent: "center" }}>
+              <button
+                className="primaryBtn"
+                onClick={() => {
+                  if (alertModal.onConfirm) alertModal.onConfirm();
+                  setAlertModal({ show: false, message: "" });
+                }}
+              >
+                ✅ Yes
+              </button>
+              <button
+                className="cancelBtn"
+                onClick={() => setAlertModal({ show: false, message: "" })}
+              >
+                ❌ No
+              </button>
+            </div>
           </div>
         </div>
       )}
+
 
       {showDepositModal && (
         <div className="modalOverlay">
