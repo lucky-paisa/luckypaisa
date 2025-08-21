@@ -4,7 +4,7 @@ import { confirmPasswordReset } from "firebase/auth";
 import { auth } from "../firebase";
 import Logo from "../assets/Text.png";
 import Logo2 from "../assets/Logo.png";
-import "./styles/forms.css";
+import "../styles/forms.css";
 
 const ResetPassword = () => {
   const [searchParams] = useSearchParams();
@@ -16,9 +16,13 @@ const ResetPassword = () => {
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // 👁️ states for showing/hiding passwords
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
   const navigate = useNavigate();
 
-  // ✅ Redirect if no valid oobCode is found (direct access to reset page not allowed)
+  // ✅ Redirect if no valid oobCode is found
   useEffect(() => {
     if (!oobCode) {
       navigate("/login", { replace: true });
@@ -40,7 +44,7 @@ const ResetPassword = () => {
       await confirmPasswordReset(auth, oobCode, password);
       setSuccess("Password has been reset successfully!");
 
-      // ✅ Force redirect to login, replacing history so back button can't return here
+      // ✅ Redirect to login and clear history
       setTimeout(() => navigate("/login", { replace: true }), 2000);
     } catch (err) {
       console.error("❌ Reset error:", err);
@@ -64,9 +68,10 @@ const ResetPassword = () => {
         {success && <p className="form-success">{success}</p>}
 
         <form onSubmit={handleSubmit} className="form-box">
-          <div className="floating-group">
+          {/* New Password */}
+          <div className="floating-group password-group">
             <input
-              type="password"
+              type={showPassword ? "text" : "password"}
               placeholder=" "
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -74,11 +79,19 @@ const ResetPassword = () => {
               className="floating-input"
             />
             <label className="floating-label">New Password</label>
+            <button
+              type="button"
+              className="eye-btn"
+              onClick={() => setShowPassword((prev) => !prev)}
+            >
+              {showPassword ? "🙈" : "👁️"}
+            </button>
           </div>
 
-          <div className="floating-group">
+          {/* Confirm Password */}
+          <div className="floating-group password-group">
             <input
-              type="password"
+              type={showConfirmPassword ? "text" : "password"}
               placeholder=" "
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
@@ -86,6 +99,13 @@ const ResetPassword = () => {
               className="floating-input"
             />
             <label className="floating-label">Confirm Password</label>
+            <button
+              type="button"
+              className="eye-btn"
+              onClick={() => setShowConfirmPassword((prev) => !prev)}
+            >
+              {showConfirmPassword ? "🙈" : "👁️"}
+            </button>
           </div>
 
           <button type="submit" className="form-button" disabled={loading}>

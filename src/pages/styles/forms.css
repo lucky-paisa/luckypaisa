@@ -263,3 +263,18 @@
     border-radius: 12px;
   }
 }
+/* Container for eye button inside password field */
+.password-group {
+  position: relative;
+}
+
+.eye-btn {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+}
