@@ -1466,6 +1466,7 @@ const formatPlanName = (planId) => {
       {alertModal.show && (
         <div className="modalOverlay">
           <div className="modal">
+              <button className="cancelBtn" style={{ marginLeft:'85%' }} onClick={() => setAlertModal({ show: false, message: "" })} >X</button>
             <h3>📢 Confirmation</h3>
             <p>{alertModal.message}</p>
             <div style={{ display: "flex", gap: "10px", justifyContent: "center" }}>
@@ -1477,12 +1478,6 @@ const formatPlanName = (planId) => {
                 }}
               >
                 ✅ Yes
-              </button>
-              <button
-                className="cancelBtn"
-                onClick={() => setAlertModal({ show: false, message: "" })}
-              >
-                ❌ No
               </button>
             </div>
           </div>
