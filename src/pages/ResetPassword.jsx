@@ -4,7 +4,7 @@ import { confirmPasswordReset } from "firebase/auth";
 import { auth } from "../firebase";
 import Logo from "../assets/Text.png";
 import Logo2 from "../assets/Logo.png";
-import "../styles/forms.css";
+import "./styles/forms.css";
 
 const ResetPassword = () => {
   const [searchParams] = useSearchParams();
