@@ -21,9 +21,10 @@ const Signup = () => {
     confirmPassword: '',
   });
   const [showPassword, setShowPassword] = useState(false);
-  const [focused, setFocused] = useState({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [accepted, setAccepted] = useState(false);
+  const [showDisclaimer, setShowDisclaimer] = useState(true);
 
   const handleChange = (e) => {
     setFormData((prev) => ({
@@ -35,6 +36,10 @@ const Signup = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+
+    if (!accepted) {
+      return setError("You must accept the disclaimer to continue.");
+    }
 
     if (formData.password !== formData.confirmPassword) {
       return setError("Passwords do not match.");
@@ -56,6 +61,8 @@ const Signup = () => {
         phone: formData.phone,
         joinedAt: new Date(),
         referenceBy: referralId ? referralId : "SELF",
+        acceptedDisclaimer: true,
+        acceptedAt: new Date(),
       });
 
       navigate('/login');
@@ -73,7 +80,68 @@ const Signup = () => {
   return (
     <div className="form-container">
       <div className="form-overlay"></div>
-      <div className="form-card">
+
+      {/* Disclaimer Modal */}
+      {showDisclaimer && (
+        <div className="modalOverlay">
+          <div className="modalBox">
+            {/* Close Button */}
+            <button
+              className="modalClose"
+              onClick={() => navigate('/login')}
+            >
+              ✖
+            </button>
+
+            <h2>⚠️Disclaimer & Terms</h2>
+            <div className="modalContent">
+              <p>
+                By signing up, you acknowledge that all activities within <span style={{color:'#ffc734'}}>
+                VEON App </span>, including deposits, withdrawals, pool participation, and
+                Lucky Draw entries, are carried out at your own choice and
+                responsibility. You confirm that you are acting voluntarily, at
+                your own risk, and accept full responsibility for any profits or
+                losses. The app and its operators hold no liability for any
+                financial consequences.
+              </p>
+              <p>
+                By checking the box below, you confirm that you have read,
+                understood, and agreed to this disclaimer, as well as the <span style={{color:'#ffc734'}}>
+                Terms & Conditions</span>, in compliance with Pakistani law including PECA
+                2016.
+              </p>
+
+              <label style={{ display: "flex", gap: "8px", marginTop: "12px" }}>
+                <input
+                  type="checkbox"
+                  checked={accepted}
+                  onChange={(e) => setAccepted(e.target.checked)}
+                />
+                I have read and accept the Disclaimer & Terms
+              </label>
+
+              <button
+                onClick={() => setShowDisclaimer(false)}
+                disabled={!accepted}
+                style={{
+                  marginTop: "15px",
+                  padding: "10px 15px",
+                  borderRadius: "8px",
+                  background: accepted ? "#4CAF50" : "#aaa",
+                  color: "#fff",
+                  fontWeight: "bold",
+                  cursor: accepted ? "pointer" : "not-allowed",
+                }}
+              >
+                Continue to Signup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Signup Card */}
+      <div className="form-card" style={{ filter: showDisclaimer ? "blur(4px)" : "none" }}>
         <h2 className="form-title">
           <img src={Logo2} alt="logo" className="logo-main" />
           Create Your Account
@@ -90,15 +158,12 @@ const Signup = () => {
               name="name"
               value={formData.name}
               onChange={handleChange}
-              onFocus={() => setFocused({ ...focused, name: true })}
-              onBlur={() => setFocused({ ...focused, name: false })}
               required
               placeholder=" "
               className="floating-input"
+              disabled={showDisclaimer}
             />
-            {!(formData.name || focused.name) && (
-              <label className="floating-label">Full Name</label>
-            )}
+            <label className="floating-label">Full Name</label>
           </div>
 
           {/* Email */}
@@ -108,15 +173,12 @@ const Signup = () => {
               name="email"
               value={formData.email}
               onChange={handleChange}
-              onFocus={() => setFocused({ ...focused, email: true })}
-              onBlur={() => setFocused({ ...focused, email: false })}
               required
               placeholder=" "
               className="floating-input"
+              disabled={showDisclaimer}
             />
-            {!(formData.email || focused.email) && (
-              <label className="floating-label">Email</label>
-            )}
+            <label className="floating-label">Email</label>
           </div>
 
           {/* Phone */}
@@ -126,15 +188,12 @@ const Signup = () => {
               name="phone"
               value={formData.phone}
               onChange={handleChange}
-              onFocus={() => setFocused({ ...focused, phone: true })}
-              onBlur={() => setFocused({ ...focused, phone: false })}
               required
               placeholder=" "
               className="floating-input"
+              disabled={showDisclaimer}
             />
-            {!(formData.phone || focused.phone) && (
-              <label className="floating-label">Phone Number</label>
-            )}
+            <label className="floating-label">Phone Number</label>
           </div>
 
           {/* Password */}
@@ -144,15 +203,12 @@ const Signup = () => {
               name="password"
               value={formData.password}
               onChange={handleChange}
-              onFocus={() => setFocused({ ...focused, password: true })}
-              onBlur={() => setFocused({ ...focused, password: false })}
               required
               placeholder=" "
               className="floating-input"
+              disabled={showDisclaimer}
             />
-            {!(formData.password || focused.password) && (
-              <label className="floating-label">Password</label>
-            )}
+            <label className="floating-label">Password</label>
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
@@ -169,18 +225,15 @@ const Signup = () => {
               name="confirmPassword"
               value={formData.confirmPassword}
               onChange={handleChange}
-              onFocus={() => setFocused({ ...focused, confirmPassword: true })}
-              onBlur={() => setFocused({ ...focused, confirmPassword: false })}
               required
               placeholder=" "
               className="floating-input"
+              disabled={showDisclaimer}
             />
-            {!(formData.confirmPassword || focused.confirmPassword) && (
-              <label className="floating-label">Confirm Password</label>
-            )}
+            <label className="floating-label">Confirm Password</label>
           </div>
 
-          <button type="submit" className="form-button" disabled={loading}>
+          <button type="submit" className="form-button" disabled={loading || showDisclaimer}>
             {loading ? 'Signing up...' : 'Sign Up'}
           </button>
         </form>
