@@ -218,7 +218,7 @@ const Login = () => {
 
           <p className="footer-text">
             Don’t have an account?{' '}
-            <a href="/signup" style={{ color: '#60a5fa' }}>Sign Up</a>
+            <a href="/signup?showDisclaimer=true" style={{ color: '#60a5fa' }}>Sign Up</a>
           </p>
         </div>
       </div>

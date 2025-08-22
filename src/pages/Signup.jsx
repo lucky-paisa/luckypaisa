@@ -24,7 +24,9 @@ const Signup = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [accepted, setAccepted] = useState(false);
-  const [showDisclaimer, setShowDisclaimer] = useState(true);
+  const showDisclaimerInitially = searchParams.get("showDisclaimer") === "true";
+  const [showDisclaimer, setShowDisclaimer] = useState(showDisclaimerInitially);
+
 
   const handleChange = (e) => {
     setFormData((prev) => ({
