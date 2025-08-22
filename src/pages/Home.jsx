@@ -50,6 +50,7 @@ const Home = () => {
   const announcementIntervalRef = useRef(null); // ref for rotation interval
   const announcementTimeoutRef = useRef(null); // ref for override timeout
   const [alertModal, setAlertModal] = useState({ show: false,  message: '', isAnnouncement: false, timestamp: null });
+  const [alertModalConfirm, setAlertModalConfirm] = useState({ show: false,  message: '', isAnnouncement: false, timestamp: null });
   const [showDepositModal, setShowDepositModal] = useState(false);
   const [depositAmount, setDepositAmount] = useState('');
   const [depositScreenshot, setDepositScreenshot] = useState(null);
@@ -587,7 +588,6 @@ useEffect(() => {
     }
   };
 
-
   // 📌 Cloudinary Upload Helper
 const uploadToCloudinary = async (file) => {
   const formData = new FormData();
@@ -1008,8 +1008,6 @@ const formatPlanName = (planId) => {
 
       <br/>
 
-      
-
       <div className="row">
         <div className="box" style={{display:'flex', background:'#324674ff'}}>
           
@@ -1323,7 +1321,7 @@ const formatPlanName = (planId) => {
               {user && (
                 <button
                   onClick={() => {
-                    setAlertModal({
+                    setAlertModalConfirm({
                       show: true,
                       message: "Do you want to reset your password?",
                       onConfirm: async () => {
@@ -1463,21 +1461,29 @@ const formatPlanName = (planId) => {
         ))}
       </div>
 
-      {alertModal.show && (
+      {/* Alert Modal */} 
+      {alertModal.show && ( 
         <div className="modalOverlay">
           <div className="modal">
-              <button className="cancelBtn" style={{ marginLeft:'85%' }} onClick={() => setAlertModal({ show: false, message: "" })} >X</button>
+           <h3>📢 Announcement</h3> 
+           <p>{alertModal.message}</p>
+            <button className="primaryBtn" onClick={handleAlertOk}>OK</button>
+          </div> 
+        </div> 
+      )}
+      
+      {alertModalConfirm.show && (
+        <div className="modalOverlay">
+          <div className="modal">
+              <button className="cancelBtn" style={{ marginLeft:'85%' }} onClick={() => setAlertModalConfirm({ show: false, message: "" })} >X</button>
             <h3>📢 Confirmation</h3>
-            <p>{alertModal.message}</p>
+            <p>{alertModalConfirm.message}</p>
             <div style={{ display: "flex", gap: "10px", justifyContent: "center" }}>
               <button
                 className="primaryBtn"
                 onClick={() => {
-                  if (alertModal.onConfirm) alertModal.onConfirm();
-                  setAlertModal({ show: false, message: "" });
-                }}
-              >
-                ✅ Yes
+                  if (alertModalConfirm.onConfirm) alertModalConfirm.onConfirm(); 
+                    setAlertModalConfirm({ show: false, message: "" });}}>Yes
               </button>
             </div>
           </div>
