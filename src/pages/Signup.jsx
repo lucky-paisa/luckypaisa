@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { auth, db } from '../firebase';
+import { useAuth } from '../context/AuthContext';
 import Logo from '../assets/Text.png';
 import Logo2 from '../assets/Logo.png';
 import './styles/forms.css';
@@ -10,6 +11,7 @@ import './styles/forms.css';
 const Signup = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { login } = useAuth();
   const searchParams = new URLSearchParams(location.search);
   const referralId = searchParams.get("ref") || null;
 
@@ -88,7 +90,7 @@ const Signup = () => {
   } finally {
     setLoading(false);
   }
-};
+};x
 
   return (
     <div className="form-container">
