@@ -36,48 +36,59 @@ const Signup = () => {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
+  e.preventDefault();
+  setError('');
 
-    if (!accepted) {
-      return setError("You must accept the disclaimer to continue.");
+  if (!accepted) {
+    return setError("You must accept the disclaimer to continue.");
+  }
+
+  if (formData.password !== formData.confirmPassword) {
+    return setError("Passwords do not match.");
+  }
+
+  try {
+    setLoading(true);
+    const userCredential = await createUserWithEmailAndPassword(
+      auth,
+      formData.email,
+      formData.password
+    );
+    const user = userCredential.user;
+
+    await setDoc(doc(db, 'users', user.uid), {
+      uid: user.uid,
+      name: formData.name,
+      email: formData.email,
+      phone: formData.phone,
+      joinedAt: new Date(),
+      referenceBy: referralId ? referralId : "SELF",
+      acceptedDisclaimer: true,
+      acceptedAt: new Date(),
+    });
+
+    // ✅ Immediately update global auth state
+    login({
+      uid: user.uid,
+      name: formData.name,
+      email: formData.email,
+      phone: formData.phone,
+      isAdmin: false,
+    });
+
+    // ✅ Redirect directly to home
+    navigate('/home');
+  } catch (err) {
+    console.error(err);
+    if (err.code === 'auth/email-already-in-use') {
+      setError('Email already exists');
+    } else {
+      setError('Signup failed. Please try again.');
     }
-
-    if (formData.password !== formData.confirmPassword) {
-      return setError("Passwords do not match.");
-    }
-
-    try {
-      setLoading(true);
-      const userCredential = await createUserWithEmailAndPassword(
-        auth,
-        formData.email,
-        formData.password
-      );
-      const user = userCredential.user;
-
-      await setDoc(doc(db, 'users', user.uid), {
-        uid: user.uid,
-        name: formData.name,
-        email: formData.email,
-        phone: formData.phone,
-        joinedAt: new Date(),
-        referenceBy: referralId ? referralId : "SELF",
-        acceptedDisclaimer: true,
-        acceptedAt: new Date(),
-      });
-
-      navigate('/login');
-    } catch (err) {
-      console.error(err);
-      if (err.code === 'auth/email-already-in-use') {
-        setError('Email already exists');
-      } else {
-        setError('Signup failed. Please try again.');
-      }
-    }
+  } finally {
     setLoading(false);
-  };
+  }
+};
 
   return (
     <div className="form-container">
