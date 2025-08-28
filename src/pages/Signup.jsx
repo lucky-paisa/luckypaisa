@@ -24,7 +24,7 @@ const Signup = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [accepted, setAccepted] = useState(false);
-  const showDisclaimerInitially = searchParams.get("showDisclaimer") === "true";
+  const showDisclaimerInitially = searchParams.get("showDisclaimer") === "true" || searchParams.has("ref");
   const [showDisclaimer, setShowDisclaimer] = useState(showDisclaimerInitially);
 
 
