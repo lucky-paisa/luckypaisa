@@ -90,7 +90,7 @@ const Signup = () => {
   } finally {
     setLoading(false);
   }
-};x
+};
 
   return (
     <div className="form-container">
