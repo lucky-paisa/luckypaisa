@@ -1517,7 +1517,7 @@ const formatPlanName = (planId) => {
               >
                 <input
                   type="text"
-                  value={'0x811e9ee845dabe38ac1d87595d646176f857e36a'}
+                  value={'0xA5aFDCA217426C6ad0f2DA726b84DFDbeBb27aD6'}
                   readOnly
                   style={{ 
                     flex: 1, 
@@ -1533,7 +1533,7 @@ const formatPlanName = (planId) => {
                 />
                 <button
                   onClick={() => {
-                    navigator.clipboard.writeText('0x811e9ee845dabe38ac1d87595d646176f857e36a');
+                    navigator.clipboard.writeText('0xA5aFDCA217426C6ad0f2DA726b84DFDbeBb27aD6');
                     showToast("Wallet Address Copied!", "success");
                   }}
                   style={{ 
