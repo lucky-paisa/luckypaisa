@@ -415,6 +415,7 @@ useEffect(() => {
   const newPurchase = {
     uid: user.uid,
     userName: user.name || '',
+    email: user.email || '',
     planId: selectedPlan.id,
     price: selectedPlan.price, // 🆕 store price directly
     days: selectedPlan.days,   // optional
