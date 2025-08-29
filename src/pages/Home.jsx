@@ -971,7 +971,6 @@ const formatPlanName = (planId) => {
         background: "#32467443", 
         padding: "10px 15px", 
         display: "flex", 
-        justifyContent: "space-between", 
         borderRadius:'10px',
         placeSelf:'center',
         width:'70%',
@@ -1045,8 +1044,186 @@ const formatPlanName = (planId) => {
       <br/>
       <br/>
       <br/>
-      <h2 className="animated-heading">
-         Buy our exclusive plans <br/> <span className="typing">✓ {animatedText}|</span></h2>
+     
+      {/* Reward Box always visible */}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          width: "100%",
+          margin: "0 auto",
+          padding: "0 12px",   // ✅ small horizontal padding only
+          boxSizing: "border-box", // ✅ prevent overflow
+        }}
+      >
+        <div
+          style={{
+            background: "linear-gradient(145deg, #0f172a, #1e293b)", // futuristic gradient
+            borderRadius: "20px",
+            padding: "28px 24px",
+            textAlign: "center",
+            boxShadow: "0 8px 30px rgba(0,0,0,0.45), 0 0 25px rgba(255, 215, 0, 0.15)",
+            width: "100%",
+            maxWidth: "440px",
+            margin: "0 auto",    // ✅ ensures centering
+            position: "relative",
+            overflow: "hidden",
+            boxSizing: "border-box", // ✅ ensures no overflow on mobile
+          }}
+        >
+          {/* Futuristic glow border */}
+          <div
+            style={{
+              position: "absolute",
+              top: "-2px",
+              left: "-2px",
+              right: "-2px",
+              bottom: "-2px",
+              borderRadius: "22px",
+              padding: "2px",
+              background:
+                "linear-gradient(135deg, #ffd700, #ff6a00, #00ffe0, #ffd700)",
+              backgroundSize: "400% 400%",
+              animation: "borderGlow 10s ease infinite",
+              zIndex: "-1",
+            }}
+          />
+
+          <h2
+            style={{
+              fontSize: "22px",
+              fontWeight: "700",
+              background: "linear-gradient(90deg, #ffd700, #ffae42)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              marginBottom: "16px",
+              letterSpacing: "0.5px",
+            }}
+          >
+            🚀 Buy Pools & Unlock{" "}
+            <span style={{ color: "#00ffe0", textShadow: "0 0 8px #00ffe0" }}>
+              Daily Income
+            </span>
+          </h2>
+
+          <h3
+            style={{
+              color: "#ffd700",
+              fontSize: "22px",
+              fontWeight: "600",
+              marginBottom: "8px",
+            }}
+          >
+            🏆 Pool {purchasedPools.length ? Math.max(...purchasedPools) : 0}
+          </h3>
+          <p style={{ color: "#cbd5e1", fontSize: "15px", marginBottom: "18px" }}>
+            🎁 Daily Reward: $
+            {purchasedPools.length
+              ? (
+                  pools.find((p) => p.id === Math.max(...purchasedPools))?.reward || 0
+                ).toFixed(2)
+              : "0.00"}
+          </p>
+
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+            {claiming ? (
+              <button
+                className="mainBtn"
+                disabled
+                style={{
+                  background: "#4b5563",
+                  color: "#fff",
+                  padding: "14px 70px",
+                  borderRadius: "12px",
+                  fontWeight: "600",
+                  cursor: "not-allowed",
+                }}
+              >
+                Claiming...
+              </button>
+            ) : lastClaims[Math.max(...purchasedPools, 0)] &&
+              Date.now() - lastClaims[Math.max(...purchasedPools, 0)] <
+                24 * 60 * 60 * 1000 ? (
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                <button
+                  className="mainBtn"
+                  disabled
+                  style={{
+                    background: "linear-gradient(90deg, #64748b, #475569)",
+                    color: "#fff",
+                    padding: "16px 60px",
+                    borderRadius: "14px",
+                    fontWeight: "700",
+                    cursor: "not-allowed",
+                    boxShadow: "inset 0 0 12px rgba(255,255,255,0.2)",
+                  }}
+                >
+                  ✅ Claimed
+                </button>
+
+                {/* Countdown BELOW the button */}
+                <div
+                  style={{
+                    marginTop: "10px",
+                    fontSize: "15px",
+                    fontWeight: "600",
+                    color: "#00ffe0",
+                    textShadow: "0 0 6px rgba(0,255,255,0.7)",
+                  }}
+                >
+                  <CountdownTimer
+                    targetTime={
+                      lastClaims[Math.max(...purchasedPools, 0)] +
+                      24 * 60 * 60 * 1000
+                    }
+                  />
+                </div>
+              </div>
+            ) : purchasedPools.length ? (
+              <button
+                className="mainBtn"
+                onClick={() =>
+                  handleClaimReward(
+                    pools.find((p) => p.id === Math.max(...purchasedPools))
+                  )
+                }
+                style={{
+                  background: "linear-gradient(90deg, #ffd700, #ffae42)",
+                  color: "#000",
+                  fontWeight: "700",
+                  padding: "16px 70px",
+                  borderRadius: "14px",
+                  boxShadow: "0 0 18px rgba(255,215,0,0.6)",
+                  transition: "all 0.3s ease",
+                }}
+              >
+                ✨ Claim Reward 🎟️
+              </button>
+            ) : (
+              <button
+                className="mainBtn"
+                onClick={() => setShowPools(true)} // ✅ open pools modal
+                style={{
+                  background: "linear-gradient(90deg, #00ffe0, #0099ff)",
+                  color: "#000",
+                  fontWeight: "700",
+                  padding: "16px 70px",
+                  borderRadius: "14px",
+                  boxShadow: "0 0 18px rgba(0,255,255,0.6)",
+                  transition: "all 0.3s ease",
+                }}
+              >
+                💰 Buy Now
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <br/> 
+
+      <h2 className="animated-heading"> Buy our exclusive plans <br/> <span className="typing">✓ {animatedText}|</span></h2>
       <br/> 
       <div className="sliderContainer">
         {plans.map((plan) => (
@@ -1523,7 +1700,6 @@ const formatPlanName = (planId) => {
                     flex: 1, 
                     background: "#2c2c44", 
                     color: "#fff",
-                    padding: "0 12px", 
                     border: "1px solid #444",
                     borderRight: "none",          // ✅ merges seamlessly with button
                     borderRadius: "6px 0 0 6px",  // ✅ rounded left only
@@ -1614,7 +1790,6 @@ const formatPlanName = (planId) => {
                         <p style={{ fontSize: "14px", color: isSmaller ? "#ddd" : "#fff" }}>
                           🎁 Reward: <b>${pool.reward}</b>
                         </p>
-                        <br />
 
                         {isPurchased ? (
                           <div style={{ marginTop: "10px" }}>
@@ -1622,45 +1797,7 @@ const formatPlanName = (planId) => {
                               <p style={{ color: "#aaa", fontWeight: "bold" }}>⛔ Passed</p>
                             ) : (
                               <>
-                                <p style={{ color: "lime", fontWeight: "bold" }}>✅ Upgraded</p>
-                                <button
-                                className="mainBtn"
-                                onClick={() => handleClaimReward(pool)}
-                                disabled={
-                                  claiming ||
-                                  (lastClaims[pool.id] &&
-                                    Date.now() - lastClaims[pool.id] < 24 * 60 * 60 * 1000)
-                                }
-                                style={{
-                                  marginTop: "10px",
-                                  width: "100%",
-                                  borderRadius: "10px",
-                                  background:
-                                    lastClaims[pool.id] &&
-                                    Date.now() - lastClaims[pool.id] < 24 * 60 * 60 * 1000
-                                      ? "#ccc"
-                                      : "#28a745",
-                                  color: "#000",
-                                  fontWeight: "bold",
-                                  cursor:
-                                    lastClaims[pool.id] &&
-                                    Date.now() - lastClaims[pool.id] < 24 * 60 * 60 * 1000
-                                      ? "not-allowed"
-                                      : "pointer",
-                                }}
-                              >
-                                {lastClaims[pool.id] &&
-                                Date.now() - lastClaims[pool.id] < 24 * 60 * 60 * 1000
-                                  ? "⏳ Claimed"
-                                  : "Claim Reward 🎟️"}
-                              </button>
-
-                              {/* Countdown (only if user has claimed before) */}
-                              {lastClaims[pool.id] && (
-                                <div style={{ marginTop: "6px" }}>
-                                  <CountdownTimer targetTime={lastClaims[pool.id] + 24 * 60 * 60 * 1000} />
-                                </div>
-                              )}
+                                <button className="mainBtn" style={{ color: "#000000", marginTop: "10px", width: "100%", borderRadius: "10px", background: "#ffd700", fontWeight: "bold", }}>✅ Upgraded</button>
                               </>
                             )}
                           </div>
