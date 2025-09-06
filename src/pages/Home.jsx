@@ -1615,7 +1615,7 @@ const formatPlanName = (planId) => {
                       : "4px solid gold"
                   }}>
                     <p>
-                      {item.type === "deposit" && `💰 Deposit — $${item.amount} + 50% Bonus reward} (${item.status})`}
+                      {item.type === "deposit" && `💰 Deposit — $${item.amount} including 50% deposit Bonus} (${item.status})`}
                       {item.type === "withdraw" && `💸 Withdrawal — $${item.amount} (${item.status})`}
                       {item.type === "planWin" && `🏆 Won ${item.planName} — $${item.amount}`}
                     </p>
