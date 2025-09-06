@@ -65,7 +65,9 @@ const Home = () => {
   const [claiming, setClaiming] = useState(false);
   const [lastClaims, setLastClaims] = useState({});
   const [userLoaded, setUserLoaded] = useState(false);
-
+  const [poolWallet, setPoolWallet] = useState(0); 
+  const [showExchangeModal, setShowExchangeModal] = useState(false);
+  const [exchangeAmount, setExchangeAmount] = useState("");
 
   // 📌 Combine all history into one array
 const combinedHistory = useMemo(() => {
@@ -126,6 +128,7 @@ useEffect(() => {
     // keep user fields in state
     setUserData(data);
     setWallet(data.wallet || 0);
+    setPoolWallet(data.poolWallet || 0);
     // ✅ Load pool claim times into state for countdown
     if (data.poolClaims) {
       setLastClaims(data.poolClaims);
@@ -395,10 +398,9 @@ useEffect(() => {
     }
   };
 
-
  const handleBuyWithWallet = async () => {
-  if (!selectedPlan || wallet < selectedPlan.price) {
-    showToast("Insufficient balance to buy this plan", "error");
+  if (!selectedPlan || poolWallet < selectedPlan.price) {
+    showToast("❌ Not enough Pool Wallet balance to buy this plan", "error");
     return;
   }
 
@@ -406,10 +408,10 @@ useEffect(() => {
     showToast(`❌ You already purchased ${planNameMap[selectedPlan.id]}.`, "error");
     return;
   }
+
   setLoading(true);
 
-  const updatedWallet = wallet - selectedPlan.price;
-
+  const updatedPoolWallet = poolWallet - selectedPlan.price;
   const luckyDrawEnd = Date.now() + (selectedPlan.days * 24 * 60 * 60 * 1000);
 
   const newPurchase = {
@@ -417,38 +419,35 @@ useEffect(() => {
     userName: user.name || '',
     email: user.email || '',
     planId: selectedPlan.id,
-    price: selectedPlan.price, // 🆕 store price directly
-    days: selectedPlan.days,   // optional
-    reward: selectedPlan.reward, // optional
+    price: selectedPlan.price,
+    days: selectedPlan.days,
+    reward: selectedPlan.reward,
     approvedAt: serverTimestamp(),
     status: 'approved',
-    expiresAt: luckyDrawEnd // 🆕 store expiry timestamp
+    expiresAt: luckyDrawEnd
   };
 
-
-  // ✅ 1. Update user's wallet and purchases
   const updatedPurchases = [
     ...purchases,
     { planId: selectedPlan.id, status: 'approved', purchasedAt: Date.now() },
   ];
 
   await updateDoc(doc(db, 'users', user.uid), {
-    wallet: updatedWallet,
+    poolWallet: updatedPoolWallet,   // ✅ Deduct from Pool Wallet
     purchases: updatedPurchases
   });
 
-  // ✅ 2. Also add to purchases collection for persistence
   await addDoc(collection(db, 'purchases'), newPurchase);
 
-  // ✅ 3. Update local state
-  setWallet(updatedWallet);
+  setPoolWallet(updatedPoolWallet);
   setPurchases(updatedPurchases);
 
   setShowBuyModal(false);
   setSelectedPlan(null);
   setLoading(false);
-};
 
+  showToast(`✅ You successfully joined ${planNameMap[selectedPlan.id]}`, "success");
+};
 
   const plans = [
     { id: 1, price: 1, days: 10, reward: 10 },
@@ -730,13 +729,17 @@ const pools = [
   { id: 2, price: 100, reward: 2.5 },
   { id: 3, price: 200, reward: 5.5 },
   { id: 4, price: 300, reward: 8.5 },
+  { id: 5, price: 500, reward: 15 },
+  { id: 6, price: 700, reward: 22 },
+  { id: 7, price: 1000, reward: 31 },
+  { id: 8, price: 2000, reward: 65 },
 ];
 
 const handleBuyPool = async (pool) => {
   if (!user) return;
 
   try {
-    // 🚫 Prevent double buy (local guard)
+    // 🚫 Prevent double buy
     if (purchasedPools.includes(pool.id)) {
       showToast(`❌ You already purchased Pool ${pool.id}`, "error");
       return;
@@ -751,17 +754,17 @@ const handleBuyPool = async (pool) => {
     }
 
     const userDataFromDb = userSnap.data();
-    const walletBalance = Number(userDataFromDb.wallet || 0);
+    const poolWalletBalance = Number(userDataFromDb.poolWallet || 0);
 
-    if (walletBalance < pool.price) {
-      showToast("❌ You don't have enough balance to buy this pool. Please deposit first.", "error");
+    if (poolWalletBalance < pool.price) {
+      showToast("❌ Not enough Pool Wallet balance. Please deposit first.", "error");
       return;
     }
 
-    // Deduct wallet
-    const newBalance = walletBalance - pool.price;
+    // Deduct from Pool Wallet only
+    const newPoolWallet = poolWalletBalance - pool.price;
 
-    // Filter out smaller pools from purchases
+    // Filter smaller pools
     const newPurchases = (userDataFromDb.purchases || [])
       .filter(p => !String(p.planId).startsWith("pool_") || Number(p.planId.split("_")[1]) >= pool.id);
 
@@ -775,13 +778,11 @@ const handleBuyPool = async (pool) => {
       }
     ];
 
-    // Update user doc
     await updateDoc(userRef, {
-      wallet: newBalance,
+      poolWallet: newPoolWallet,   // ✅ deduct from Pool Wallet
       purchases: updatedPurchases
     });
 
-    // Add new purchase entry
     await addDoc(collection(db, "purchases"), {
       uid: user.uid,
       userName: userDataFromDb.name || "Unknown",
@@ -793,50 +794,15 @@ const handleBuyPool = async (pool) => {
       approvedAt: serverTimestamp()
     });
 
-    // ❌ Delete old pool purchases for this user from purchases collection
-    const purchasesRef = collection(db, "purchases");
-    const q = query(purchasesRef, where("uid", "==", user.uid), where("type", "==", "pool"));
-
-    const oldPurchasesSnap = await getDocs(q);
-    oldPurchasesSnap.forEach(async (docSnap) => {
-      const planId = docSnap.data().planId;
-      const planNumber = Number(planId.split("_")[1]);
-
-      // If it's a smaller pool than the one just bought → delete it
-      if (planNumber < pool.id) {
-        await deleteDoc(docSnap.ref);
-      }
-    });
-
-    // ✅ Add user to NEW pool (admin side)
-    await setDoc(doc(db, "pools", `pool_${pool.id}`, "users", user.uid), {
-      uid: user.uid,
-      userName: userDataFromDb.name || "Unknown",
-      email: userDataFromDb.email || "",
-      joinedAt: serverTimestamp()
-    });
-
-    // ❌ Then try removing smaller pools (safe cleanup)
-    for (let i = 1; i < pool.id; i++) {
-      try {
-        await deleteDoc(doc(db, "pools", `pool_${i}`, "users", user.uid));
-      } catch (err) {
-        console.warn(`Pool cleanup failed for pool_${i}:`, err);
-      }
-    }
-
-    // Update local state
-    setWallet(newBalance);
+    // ✅ Update local state
+    setPoolWallet(newPoolWallet);
     setPurchases(updatedPurchases);
     setPurchasedPools(prev => [...prev, pool.id]);
 
-    showToast(`✅ Your ${formatPlanName(`pool_${pool.id}`)} has been approved!`, "success");
-
-    return;
-
+    showToast(`✅ Successfully bought Pool ${pool.id}`, "success");
   } catch (error) {
     console.error("Error buying pool:", error);
-    showToast("❌ Error buying pool. Please try again.", "error");
+    showToast("❌ Error buying pool. Try again.", "error");
   }
 };
 
@@ -935,6 +901,41 @@ const formatPlanName = (planId) => {
   return planId; // fallback for non-pool items
 };
 
+const handleExchange = async () => {
+  const amount = Number(exchangeAmount);
+
+  if (!amount || amount <= 0) {
+    showToast("❌ Enter a valid amount.", "error");
+    return;
+  }
+
+  if (amount > wallet) {
+    showToast("❌ Not enough balance in wallet.", "error");
+    return;
+  }
+
+  try {
+    const newWallet = wallet - amount;
+    const newPoolWallet = poolWallet + amount;
+
+    // Update in Firestore
+    await updateDoc(doc(db, "users", user.uid), {
+      wallet: newWallet,
+      poolWallet: newPoolWallet
+    });
+
+    // Update local state
+    setWallet(newWallet);
+    setPoolWallet(newPoolWallet);
+    setExchangeAmount("");
+    setShowExchangeModal(false);
+
+    showToast(`✅ Successfully moved $${amount} to Pool Wallet.`, "success");
+  } catch (error) {
+    console.error("Exchange error:", error);
+    showToast("❌ Exchange failed, try again.", "error");
+  }
+};
 
   return (
     <div className="container">
@@ -1025,14 +1026,24 @@ const formatPlanName = (planId) => {
 
       </div>
 
-          <div  style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', rowGap:'85%' }}>
-            <button className="mainBtn" style={{height:'250%',background:'#141414', border:'1px dashed #324674ff', justifyContent:'center', borderRadius:'10px' }} onClick={() => setShowPurchases(true)}>🛒 Purchases</button>
-            <button className="mainBtn" style={{height:'250%',background:'#141414', border:'1px dashed #324674ff', justifyContent:'center', borderRadius:'10px' }} onClick={() => { setShowHistory(true); }}>📜 History</button>
-            <button className="mainBtn" style={{height:'250%',background:'#141414', border:'1px dashed #324674ff', justifyContent:'center', borderRadius:'10px' }} onClick={() => setShowAddressModal(true)}>
+          <div  style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', rowGap:'35%' }}>
+            <button className="mainBtn" style={{height:'150%',background:'#141414', border:'1px dashed #324674ff', borderRadius:'10px', color:'lime', justifyContent:'center'}} >
+             🏦 Pool Wallet ${poolWallet.toFixed(2)}
+            </button>
+            <button className="mainBtn" style={{height:'150%',background:'#141414', border:'1px dashed #324674ff', justifyContent:'center', borderRadius:'10px' }} onClick={() => setShowPools(true)}>🏆 Pools</button>
+            <button className="mainBtn" style={{height:'200%',background:'#141414', border:'1px dashed #324674ff', justifyContent:'center', borderRadius:'10px' }} onClick={() => setShowPurchases(true)}>🛒 Purchases</button>
+            <button className="mainBtn" style={{height:'200%',background:'#141414', border:'1px dashed #324674ff', justifyContent:'center', borderRadius:'10px' }} onClick={() => { setShowHistory(true); }}>📜 History</button>
+            <button className="mainBtn" style={{height:'200%',background:'#141414', border:'1px dashed #324674ff', justifyContent:'center', borderRadius:'10px' }} onClick={() => setShowAddressModal(true)}>
               {withdrawalAddress ? '✏️ Wallet' : '➕ Add Wallet'}
             </button>
-            <button className="mainBtn" style={{height:'250%',background:'#141414', border:'1px dashed #324674ff', justifyContent:'center', borderRadius:'10px' }} onClick={() => setShowPools(true)}>🏆 Pools</button>
+                        <button className="mainBtn" style={{height:'200%',background:'#141414', border:'1px dashed #324674ff', borderRadius:'10px', justifyContent:'center'}} onClick={() => setShowExchangeModal(true)}>
+             💱 Exchange
+            </button>
+
           </div>
+    
+      <br/>
+      <br/>
       <br/>
       <br/>
       <br/>
@@ -1615,7 +1626,7 @@ const formatPlanName = (planId) => {
                       : "4px solid gold"
                   }}>
                     <p>
-                      {item.type === "deposit" && `💰 Deposit — $${item.amount} including 50% deposit Bonus (${item.status})`}
+                      {item.type === "deposit" && `💰 Deposit — $${item.amount} with 50% bouns (${item.status})`}
                       {item.type === "withdraw" && `💸 Withdrawal — $${item.amount} (${item.status})`}
                       {item.type === "planWin" && `🏆 Won ${item.planName} — $${item.amount}`}
                     </p>
@@ -1826,6 +1837,30 @@ const formatPlanName = (planId) => {
                 </div>
               );
             })()}
+          </div>
+        </div>
+      )}
+
+      {showExchangeModal && (
+        <div className="modalOverlay">
+          <div className="modal">
+            <h3>💱 Exchange to Pool Wallet</h3>
+            <p style={{ fontSize:"14px", color:"#bbb" }}>
+              Convert balance from <b>Wallet</b> → <b>Pool Wallet</b>.
+            </p>
+            <input
+              type="number"
+              className="input"
+              placeholder="Enter amount"
+              value={exchangeAmount}
+              onChange={(e) => setExchangeAmount(e.target.value)}
+            />
+            <button className="primaryBtn" onClick={handleExchange}>
+              Exchange
+            </button>
+            <button className="cancelBtn" onClick={() => setShowExchangeModal(false)}>
+              Cancel
+            </button>
           </div>
         </div>
       )}

@@ -324,20 +324,22 @@ const AdminDashboard = () => {
       const isFirstDeposit = !userData.firstDepositDone;
 
       // ✅ Update depositor's wallet
-      const amnus = Number(request.amount) * 1.50;
-      const bont = Number(request.amount) * 0.50;
-      const newBalance = Number(userData.wallet || 0) + amnus;
+      const amt = Number(request.amount);
+      const amnus = amt * 1.50;
+      const bont = amt * 0.50;
+      // ✅ Add to poolWallet only
+      const newPoolWallet = Number(userData.poolWallet || 0) + amnus;
       
       await updateDoc(userRef, {
-        wallet: newBalance,
+        poolWallet: newPoolWallet,
         depositHistory: arrayUnion({
-          amount: amnus,
+          amount: amt,
           status: "Approved",
           time: new Date().toISOString(),
         }),
-        announcement: "✅ Deposit successful!",
+        announcement: "✅ Deposit successful! Added to Pool Wallet 🎉",
         announcementTimestamp: serverTimestamp(),
-        alertMessage: `✅ Your deposit of $${request.amount} has been approved + $${bont} bonus added!`,
+        alertMessage: `✅ Your deposit of $${request.amount} has been approved + $${bont} bonus & added into Pool Wallet!!`,
         alertTimestamp: serverTimestamp(),
         ...(isFirstDeposit ? { firstDepositDone: true } : {}), // mark after first
       });
