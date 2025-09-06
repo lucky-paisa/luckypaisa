@@ -57,6 +57,7 @@ const Home = () => {
   const [showHistory, setShowHistory] = useState(false);
   const [withdrawHistory, setWithdrawHistory] = useState([]);
   const [depositHistory, setDepositHistory] = useState([]);
+  const [teamRewardsHistory, setTeamRewardsHistory] = useState([]);
   const [transactions, setTransactions] = useState([]);
   const [planWins, setPlanWins] = useState([]);
   const [poolWins, setPoolWins] = useState([]);
@@ -68,8 +69,11 @@ const Home = () => {
   const [poolWallet, setPoolWallet] = useState(0); 
   const [showExchangeModal, setShowExchangeModal] = useState(false);
   const [exchangeAmount, setExchangeAmount] = useState("");
+  const [teamCount, setTeamCount] = useState(0);
+  const [lastTeamClaim, setLastTeamClaim] = useState(null);
+  const [loadingTeamReward, setLoadingTeamReward] = useState(true);
 
-  // 📌 Combine all history into one array
+// 📌 Combine all history into one array
 const combinedHistory = useMemo(() => {
   const deposits = (depositHistory || []).map(item => ({
     type: "deposit",
@@ -92,10 +96,18 @@ const combinedHistory = useMemo(() => {
     time: new Date(item.time).getTime()
   }));
 
-  // merge and sort latest → oldest
-  return [...deposits, ...withdrawals, ...wins].sort((a, b) => b.time - a.time);
-}, [depositHistory, withdrawHistory, planWins]);
+  const teamRewards = (teamRewardsHistory || []).map(item => ({
+    type: "teamReward",
+    amount: item.amount,
+    teamCount: item.teamCount,
+    time: new Date(item.time).getTime()
+  }));
 
+  // merge and sort latest → oldest
+  return [...deposits, ...withdrawals, ...wins, ...teamRewards].sort(
+    (a, b) => b.time - a.time
+  );
+}, [depositHistory, withdrawHistory, planWins, teamRewardsHistory]);
 
 
 useEffect(() => {
@@ -116,6 +128,7 @@ useEffect(() => {
     setTransactions(data.transactions || []);
     setDepositHistory(data.depositHistory || []);
     setWithdrawHistory(data.withdrawHistory || []);
+    setTeamRewardsHistory(data.teamRewardsHistory || []);
     setPoolWins(data.poolWins || []);
     setPlanWins(data.planWins || []);
 
@@ -125,10 +138,28 @@ useEffect(() => {
       .map(p => Number(p.planId.split("_")[1]));
     setPurchasedPools(purchasedPoolIds);  
 
+    // ✅ Auto-create & sync teamCount from referralBonusHistory
+      const referralHistory = data.referralBonusHistory || [];
+      const referralCount = referralHistory.length;
+
+      if (!data.teamCount || data.teamCount !== referralCount) {
+        updateDoc(userRef, { teamCount: referralCount }).catch(err =>
+          console.error("Failed to update teamCount:", err)
+        );
+      }
+
+      // keep local state in sync
+      setTeamCount(referralCount);
+      setLastTeamClaim(data.lastTeamClaim || null);
+      setLoadingTeamReward(false);
+
     // keep user fields in state
     setUserData(data);
     setWallet(data.wallet || 0);
     setPoolWallet(data.poolWallet || 0);
+    setLastTeamClaim(data.lastTeamClaim || null);
+    setLoadingTeamReward(false);
+
     // ✅ Load pool claim times into state for countdown
     if (data.poolClaims) {
       setLastClaims(data.poolClaims);
@@ -878,19 +909,23 @@ const CountdownTimer = ({ targetTime }) => {
     return () => clearInterval(interval);
   }, [targetTime]);
 
-  if (timeLeft <= 0) return <span style={{ color: "lime" }}>Ready ✅</span>;
+  if (timeLeft <= 0) return <span>Ready ✅</span>;
 
-  const hours = Math.floor(timeLeft / (1000 * 60 * 60));
-  const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+  const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
+  const hours = Math.floor(
+    (timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
+  );
+  const minutes = Math.floor(
+    (timeLeft % (1000 * 60 * 60)) / (1000 * 60)
+  );
   const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
 
   return (
-    <span style={{ color: "#ffcc00", fontSize: "13px" }}>
-      ⏳ {hours}h {minutes}m {seconds}s
+    <span style={{ fontWeight: "700", fontSize: "15px", color: "#facc15" }}>
+      ⏳ {days}d {hours}h {minutes}m {seconds}s
     </span>
   );
 };
-
 
 // 🏆 Format pool name nicely
 const formatPlanName = (planId) => {
@@ -934,6 +969,42 @@ const handleExchange = async () => {
   } catch (error) {
     console.error("Exchange error:", error);
     showToast("❌ Exchange failed, try again.", "error");
+  }
+};
+
+const handleClaimTeamReward = async () => {
+  if (!user || loadingTeamReward) return; // 🚫 prevent spam until Firestore sync
+
+  try {
+    setLoadingTeamReward(true);
+
+    // 🎯 Reward calculation
+    const baseReward = 170;
+    const extraReward = teamCount > 35 ? (teamCount - 35) * 5 : 0;
+    const totalReward = baseReward + extraReward;
+
+    const userRef = doc(db, "users", user.uid);
+
+    await updateDoc(userRef, {
+      wallet: (userData.wallet || 0) + totalReward, // add to withdrawable wallet
+      lastTeamClaim: Date.now(),
+      teamRewardsHistory: arrayUnion({
+        amount: totalReward,
+        teamCount,
+        time: new Date().toISOString(),
+      }),
+    });
+
+    // Update local instantly
+    setWallet((prev) => prev + totalReward);
+    setLastTeamClaim(Date.now());
+
+    showToast(`🎉 Team Reward $${totalReward} added to your wallet!`, "success");
+  } catch (err) {
+    console.error("Team reward error:", err);
+    showToast("❌ Error claiming team reward.", "error");
+  } finally {
+    setLoadingTeamReward(false);
   }
 };
 
@@ -1026,11 +1097,36 @@ const handleExchange = async () => {
 
       </div>
 
-          <div  style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', rowGap:'35%' }}>
-            <button className="mainBtn" style={{height:'150%',background:'#141414', border:'1px dashed #324674ff', borderRadius:'10px', color:'lime', justifyContent:'center'}} >
-             🏦 Pool Wallet ${poolWallet.toFixed(2)}
+          <div  style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', rowGap:'0%' }}>
+            <button 
+              className="mainBtn" 
+              style={{
+                height:'150%',
+                background:'#141414',
+                border:'1px dashed #324674ff',
+                borderRadius:'10px',
+                display:'flex',
+                flexDirection:'column',
+                alignItems:'center',
+                justifyContent:'center',
+                padding:'8px'
+              }}
+            >
+              <span style={{ fontSize:'15px' }}>🏧 Pool Wallet</span>
+              <span style={{ color:'#00e676', fontWeight:'bold', fontSize:'16px' }}>
+                ${poolWallet.toFixed(2)}
+              </span>
             </button>
             <button className="mainBtn" style={{height:'150%',background:'#141414', border:'1px dashed #324674ff', justifyContent:'center', borderRadius:'10px' }} onClick={() => setShowPools(true)}>🏆 Pools</button>
+            
+
+          </div>
+
+         <br/>
+         <br/>
+         <br/>
+
+          <div  style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', rowGap:'65%' }}>
             <button className="mainBtn" style={{height:'200%',background:'#141414', border:'1px dashed #324674ff', justifyContent:'center', borderRadius:'10px' }} onClick={() => setShowPurchases(true)}>🛒 Purchases</button>
             <button className="mainBtn" style={{height:'200%',background:'#141414', border:'1px dashed #324674ff', justifyContent:'center', borderRadius:'10px' }} onClick={() => { setShowHistory(true); }}>📜 History</button>
             <button className="mainBtn" style={{height:'200%',background:'#141414', border:'1px dashed #324674ff', justifyContent:'center', borderRadius:'10px' }} onClick={() => setShowAddressModal(true)}>
@@ -1041,11 +1137,7 @@ const handleExchange = async () => {
             </button>
 
           </div>
-    
-      <br/>
-      <br/>
-      <br/>
-      <br/>
+     
       <br/>
       <br/>
       <br/>
@@ -1506,6 +1598,109 @@ const handleExchange = async () => {
             </div>          
 
             {/* Profile Actions */}
+
+             {/* 🏆 Team Reward Box */}
+              <div
+                style={{
+                  background: "linear-gradient(145deg, #0f172a, #1e293b)",
+                  borderRadius: "20px",
+                  padding: "24px",
+                  margin: "20px auto",
+                  textAlign: "center",
+                  boxShadow: "0 8px 25px rgba(0,0,0,0.4), 0 0 20px rgba(0,255,255,0.15)",
+                  width: "80%",
+                  maxWidth: "440px",
+                  position: "relative",
+                }}
+              >
+                <h2
+                  style={{
+                    fontSize: "20px",
+                    fontWeight: "700",
+                    color: "#ffd700",
+                    marginBottom: "14px",
+                  }}
+                >
+                  👥 Team Reward
+                </h2>
+
+                {/* States */}
+                {loadingTeamReward ? (
+                  <button
+                    disabled
+                    style={{
+                      background: "#4b5563",
+                      color: "#fff",
+                      padding: "14px 70px",
+                      borderRadius: "12px",
+                      fontWeight: "600",
+                      cursor: "not-allowed",
+                    }}
+                  >
+                    Loading...
+                  </button>
+                ) : teamCount < 35 ? (
+                  <button
+                    disabled
+                    style={{
+                      background: "#374151",
+                      color: "#9ca3af",
+                      padding: "14px 70px",
+                      borderRadius: "12px",
+                      fontWeight: "600",
+                      cursor: "not-allowed",
+                    }}
+                  >
+                    Team ({teamCount})
+                  </button>
+                ) : Date.now() - (lastTeamClaim || 0) < 30 * 24 * 60 * 60 * 1000 ? (
+                  // ✅ Countdown shown inside button
+                  <button
+                    disabled
+                    style={{
+                      background: "linear-gradient(90deg, #64748b, #475569)",
+                      color: "#fff",
+                      padding: "16px 40px",
+                      borderRadius: "14px",
+                      fontWeight: "700",
+                      cursor: "not-allowed",
+                      minWidth: "250px",
+                    }}
+                  >
+                    Claimed Team reward ({teamCount}) <br/>
+                    <CountdownTimer
+                      targetTime={lastTeamClaim + 30 * 24 * 60 * 60 * 1000}
+                    />
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleClaimTeamReward}
+                    disabled={loadingTeamReward}
+                    style={{
+                      background: "linear-gradient(90deg, #00ffe0, #0099ff, #00ffe0)",
+                      color: "#000",
+                      padding: "16px 70px",
+                      borderRadius: "14px",
+                      fontWeight: "700",
+                      boxShadow: "0 0 20px rgba(0,255,255,0.6)",
+                      transition: "all 0.3s ease",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = "scale(1.05)";
+                      e.currentTarget.style.boxShadow =
+                        "0 0 30px rgba(0,255,255,0.9), 0 0 50px rgba(0,255,255,0.7)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = "scale(1)";
+                      e.currentTarget.style.boxShadow =
+                        "0 0 20px rgba(0,255,255,0.6)";
+                    }}
+                  >
+                    Team ({teamCount}) Claim Reward
+                  </button>
+                )}
+              </div>
+
             <div style={{ textAlign: "center", marginTop: "25px" }}>
               {user && (
                 <button
@@ -1629,6 +1824,7 @@ const handleExchange = async () => {
                       {item.type === "deposit" && `💰 Deposit — $${item.amount} with 50% bouns (${item.status})`}
                       {item.type === "withdraw" && `💸 Withdrawal — $${item.amount} (${item.status})`}
                       {item.type === "planWin" && `🏆 Won ${item.planName} — $${item.amount}`}
+                      {item.type === "teamReward" && `👥 Team Reward — $${item.amount} (Team: ${item.teamCount})`}
                     </p>
                     <small style={{ color: "#bbb" }}>
                       {new Date(item.time).toLocaleString()}
