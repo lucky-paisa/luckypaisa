@@ -324,9 +324,10 @@ const AdminDashboard = () => {
       const isFirstDeposit = !userData.firstDepositDone;
 
       // ✅ Update depositor's wallet
-      const newBalance = Number(userData.wallet || 0) + Number(request.amount);
       const amnus = Number(request.amount) * 1.50;
       const bont = Number(request.amount) * 0.50;
+      const newBalance = Number(userData.wallet || 0) + amnus;
+      
       await updateDoc(userRef, {
         wallet: newBalance,
         depositHistory: arrayUnion({
