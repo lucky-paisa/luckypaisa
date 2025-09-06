@@ -69,6 +69,7 @@ const Home = () => {
   const [poolWallet, setPoolWallet] = useState(0); 
   const [showExchangeModal, setShowExchangeModal] = useState(false);
   const [exchangeAmount, setExchangeAmount] = useState("");
+  const [isExchanging, setIsExchanging] = useState(false);
   const [teamCount, setTeamCount] = useState(0);
   const [lastTeamClaim, setLastTeamClaim] = useState(null);
   const [loadingTeamReward, setLoadingTeamReward] = useState(true);
@@ -949,6 +950,8 @@ const handleExchange = async () => {
     return;
   }
 
+  setIsExchanging(true); // ✅ start loading
+
   try {
     const newWallet = wallet - amount;
     const newPoolWallet = poolWallet + amount;
@@ -962,13 +965,21 @@ const handleExchange = async () => {
     // Update local state
     setWallet(newWallet);
     setPoolWallet(newPoolWallet);
-    setExchangeAmount("");
-    setShowExchangeModal(false);
 
     showToast(`✅ Successfully moved $${amount} to Pool Wallet.`, "success");
+
+    // ✅ clear + close modal
+    setExchangeAmount("");
+    setShowExchangeModal(false);
   } catch (error) {
     console.error("Exchange error:", error);
     showToast("❌ Exchange failed, try again.", "error");
+
+    // close modal & reset field
+    setExchangeAmount("");
+    setShowExchangeModal(false);
+  } finally {
+    setIsExchanging(false); // ✅ stop loading
   }
 };
 
@@ -1097,31 +1108,39 @@ const handleClaimTeamReward = async () => {
 
       </div>
 
-          <div  style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', rowGap:'0%' }}>
+          <div  style={{ display: 'grid', gridTemplateColumns: 'repeat(1, 1fr)', rowGap:'0%' }}>
             <button 
+              onClick={() => setShowPools(true)}
               className="mainBtn" 
               style={{
                 height:'150%',
                 background:'#141414',
                 border:'1px dashed #324674ff',
                 borderRadius:'10px',
-                display:'flex',
+                 display:'flex',
                 flexDirection:'column',
                 alignItems:'center',
                 justifyContent:'center',
                 padding:'8px'
               }}
             >
-              <span style={{ fontSize:'15px' }}>🏧 Pool Wallet</span>
-              <span style={{ color:'#00e676', fontWeight:'bold', fontSize:'16px' }}>
-                ${poolWallet.toFixed(2)}
-              </span>
+              <span style={{fontSize: "22px", fontWeight: "600", marginBottom: "8px",ontSize:'18px',color: '#ffd700' }}> 🏆 Buy Pools</span>
+  
+                {/* White separator line */}
+                <div 
+                  style={{
+                    width: "80%",        // adjust width as needed
+                    height: "1px", 
+                    backgroundColor: "white", 
+                    margin: "6px 0"
+                  }}
+                />
+  
+              <span style={{ color:'#00e676', fontWeight:'bold', fontSize:'20px' }}>Pool Balance: ${poolWallet.toFixed(2)} </span>
             </button>
-            <button className="mainBtn" style={{height:'150%',background:'#141414', border:'1px dashed #324674ff', justifyContent:'center', borderRadius:'10px' }} onClick={() => setShowPools(true)}>🏆 Pools</button>
-            
-
           </div>
 
+         <br/>
          <br/>
          <br/>
          <br/>
@@ -2051,8 +2070,12 @@ const handleClaimTeamReward = async () => {
               value={exchangeAmount}
               onChange={(e) => setExchangeAmount(e.target.value)}
             />
-            <button className="primaryBtn" onClick={handleExchange}>
-              Exchange
+            <button 
+              className="primaryBtn" 
+              onClick={handleExchange} 
+              disabled={isExchanging}
+            >
+              {isExchanging ? "Exchanging..." : "Exchange"}
             </button>
             <button className="cancelBtn" onClick={() => setShowExchangeModal(false)}>
               Cancel
@@ -2060,6 +2083,7 @@ const handleClaimTeamReward = async () => {
           </div>
         </div>
       )}
+
     </div>
   );
 };
