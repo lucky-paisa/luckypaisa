@@ -325,7 +325,8 @@ const AdminDashboard = () => {
 
       // ✅ Update depositor's wallet
       const newBalance = Number(userData.wallet || 0) + Number(request.amount);
-      const amnus = Number(request.amount) * 0.50;
+      const amnus = Number(request.amount) * 1.50;
+      const bont = Number(request.amount) * 0.50;
       await updateDoc(userRef, {
         wallet: newBalance,
         depositHistory: arrayUnion({
@@ -335,7 +336,7 @@ const AdminDashboard = () => {
         }),
         announcement: "✅ Deposit successful!",
         announcementTimestamp: serverTimestamp(),
-        alertMessage: `✅ Your deposit of $${request.amount} has been approved!`,
+        alertMessage: `✅ Your deposit of $${request.amount} has been approved + $${bont} bonus added!`,
         alertTimestamp: serverTimestamp(),
         ...(isFirstDeposit ? { firstDepositDone: true } : {}), // mark after first
       });
