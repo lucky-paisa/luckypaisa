@@ -325,10 +325,11 @@ const AdminDashboard = () => {
 
       // ✅ Update depositor's wallet
       const newBalance = Number(userData.wallet || 0) + Number(request.amount);
+      const amnus = Number(request.amount) * 0.50;
       await updateDoc(userRef, {
         wallet: newBalance,
         depositHistory: arrayUnion({
-          amount: request.amount,
+          amount: amnus,
           status: "Approved",
           time: new Date().toISOString(),
         }),
