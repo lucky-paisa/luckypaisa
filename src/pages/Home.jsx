@@ -21,6 +21,7 @@ import {
   getDoc, 
   setDoc,
   arrayUnion,
+  writeBatch,
   deleteDoc
 } from 'firebase/firestore';
 import { db } from '../firebase';
@@ -765,13 +766,16 @@ const pools = [
   { id: 6, price: 700, reward: 22 },
   { id: 7, price: 1000, reward: 31 },
   { id: 8, price: 2000, reward: 65 },
+  { id: 9, price: 3000, reward: 100 }, 
+  { id: 10, price: 5000, reward: 180 },
+  { id: 11, price: 10000, reward: 400 },
 ];
 
 const handleBuyPool = async (pool) => {
   if (!user) return;
 
   try {
-    // 🚫 Prevent double buy
+    // 🚫 Prevent buying the same pool twice
     if (purchasedPools.includes(pool.id)) {
       showToast(`❌ You already purchased Pool ${pool.id}`, "error");
       return;
@@ -793,15 +797,16 @@ const handleBuyPool = async (pool) => {
       return;
     }
 
-    // Deduct from Pool Wallet only
+    // ✅ Deduct from Pool Wallet
     const newPoolWallet = poolWalletBalance - pool.price;
 
-    // Filter smaller pools
+    // 🔥 Remove all older pool purchases from user's purchases array
     const newPurchases = (userDataFromDb.purchases || [])
-      .filter(p => !String(p.planId).startsWith("pool_") || Number(p.planId.split("_")[1]) >= pool.id);
+      .filter(p => !p.planId || !String(p.planId).startsWith("pool_"));
 
+    // ✅ Ensure only one entry for this pool
     const updatedPurchases = [
-      ...newPurchases,
+      ...newPurchases.filter(p => !(p.planId && p.planId === `pool_${pool.id}`)),
       {
         planId: `pool_${pool.id}`,
         price: pool.price,
@@ -810,12 +815,31 @@ const handleBuyPool = async (pool) => {
       }
     ];
 
+    // ✅ Update user's doc
     await updateDoc(userRef, {
-      poolWallet: newPoolWallet,   // ✅ deduct from Pool Wallet
+      poolWallet: newPoolWallet,
       purchases: updatedPurchases
     });
 
-    await addDoc(collection(db, "purchases"), {
+    // 🔥 Delete all old pool purchases from "purchases" collection
+    const purchasesRef = collection(db, "purchases");
+    const oldPoolsQuery = query(
+      purchasesRef,
+      where("uid", "==", user.uid),
+      where("type", "==", "pool")
+    );
+    const oldPoolsSnap = await getDocs(oldPoolsQuery);
+
+    if (!oldPoolsSnap.empty) {
+      const batch = writeBatch(db);
+      oldPoolsSnap.forEach(docSnap => {
+        batch.delete(docSnap.ref);
+      });
+      await batch.commit();
+    }
+
+    // ✅ Add the new pool purchase
+    await addDoc(purchasesRef, {
       uid: user.uid,
       userName: userDataFromDb.name || "Unknown",
       email: userDataFromDb.email || "",
@@ -829,7 +853,11 @@ const handleBuyPool = async (pool) => {
     // ✅ Update local state
     setPoolWallet(newPoolWallet);
     setPurchases(updatedPurchases);
-    setPurchasedPools(prev => [...prev, pool.id]);
+    setPurchasedPools(
+      updatedPurchases
+        .filter(p => p.planId && String(p.planId).startsWith("pool_"))
+        .map(p => Number(p.planId.split("_")[1]))
+    );
 
     showToast(`✅ Successfully bought Pool ${pool.id}`, "success");
   } catch (error) {
@@ -1966,9 +1994,9 @@ const handleClaimTeamReward = async () => {
             <button onClick={() => setShowPools(false)} className="cancelBtn" style={{ marginLeft:'85%' }}>X</button>
             <h3>🏆 Available Pools</h3>
 
-            {/* ✅ NEW LOGIC: find highest pool purchased */}
             {(() => {
-              const maxPool = Math.max(...purchasedPools, 0);
+              // ✅ Always find the maximum purchased pool
+              const maxPool = purchasedPools.length > 0 ? Math.max(...purchasedPools) : 0;
 
               return (
                 <div style={{ display: 'grid', gap: '08px' }}>
@@ -1996,16 +2024,6 @@ const handleClaimTeamReward = async () => {
                           textAlign: "center",
                           transition: "transform 0.2s ease, box-shadow 0.2s ease",
                         }}
-                        onMouseEnter={(e) => {
-                          if (!isPurchased && !isSmaller) {
-                            e.currentTarget.style.transform = "scale(1.05)";
-                            e.currentTarget.style.boxShadow = "0 6px 15px rgba(0,0,0,0.6)";
-                          }
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.transform = "scale(1)";
-                          e.currentTarget.style.boxShadow = "0 4px 10px rgba(0,0,0,0.4)";
-                        }}
                       >
                         <h3 style={{ color: isSmaller ? "#ccc" : "#ffd700", marginBottom: "10px" }}>
                           🏆 Pool {pool.id}
@@ -2018,15 +2036,20 @@ const handleClaimTeamReward = async () => {
                         </p>
 
                         {isPurchased ? (
-                          <div style={{ marginTop: "10px" }}>
-                            {isSmaller ? (
-                              <p style={{ color: "#aaa", fontWeight: "bold" }}>⛔ Passed</p>
-                            ) : (
-                              <>
-                                <button className="mainBtn" style={{ color: "#000000", marginTop: "10px", width: "100%", borderRadius: "10px", background: "#ffd700", fontWeight: "bold", }}>✅ Upgraded</button>
-                              </>
-                            )}
-                          </div>
+                          <button 
+                            className="mainBtn"
+                            style={{
+                              color: "#000",
+                              marginTop: "10px",
+                              width: "100%",
+                              borderRadius: "10px",
+                              background: "#ffd700",
+                              fontWeight: "bold"
+                            }}
+                            disabled
+                          >
+                            ✅ Upgraded
+                          </button>
                         ) : (
                           !isSmaller && (
                             <button
@@ -2040,9 +2063,9 @@ const handleClaimTeamReward = async () => {
                                 fontWeight: "bold",
                               }}
                               onClick={() => handleBuyPool(pool)}
-                              disabled={!userLoaded || loading || pool.id < maxPool || purchasedPools.includes(pool.id)}
+                              disabled={!userLoaded || loading}
                             >
-                              {loading ? "Buying..." : !userLoaded ? "Loading..." : pool.id < maxPool ? "Disabled" : purchasedPools.includes(pool.id) ? "Already Bought" : "Upgrade"}
+                              {loading ? "Buying..." : "Upgrade"}
                             </button>
                           )
                         )}
