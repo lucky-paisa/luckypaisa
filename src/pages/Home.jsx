@@ -1157,7 +1157,7 @@ const handleClaimTeamReward = async () => {
                 className="attentionBox animate"
                 style={{
                   fontSize: "22px",
-                  fontWeight: "600",
+                  fontWeight: "800",
                   marginBottom: "8px",
                   color: "black",
                   background: "#ffd700",
