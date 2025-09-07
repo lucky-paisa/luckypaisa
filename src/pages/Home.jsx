@@ -1157,15 +1157,16 @@ const handleClaimTeamReward = async () => {
                 className="attentionBox animate"
                 style={{
                   fontSize: "22px",
-                  fontWeight: "800",
+                  fontWeight: "1000",
                   marginBottom: "8px",
                   color: "black",
                   background: "#ffd700",
                   padding: "20px 50px",
                   borderRadius: "15px",
+                  fontFamily: "monospace"
                 }}
               >
-                🏆 Buy Pools
+                🏆 BUY POOLS
               </span>
 
                 {/* White separator line */}
