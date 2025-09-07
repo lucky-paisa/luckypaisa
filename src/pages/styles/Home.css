@@ -515,3 +515,28 @@
   font-size: 15px;
 }
 
+.attentionBox {
+  box-shadow: 0 0 20px #ffd700;
+  display: inline-block;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.3s ease;
+}
+
+/* 👇 subtle bob animation */
+@keyframes bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+/* 👇 shake animation */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
+/* 👇 Animate on scroll/when visible */
+.attentionBox.animate {
+  animation: bob 1.5s ease-in-out infinite;
+  /* or try: animation: shake 0.8s ease-in-out infinite; */
+}

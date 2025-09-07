@@ -1152,8 +1152,22 @@ const handleClaimTeamReward = async () => {
                 padding:'8px'
               }}
             >
-              <span style={{fontSize: "22px", fontWeight: "600", marginBottom: "8px",ontSize:'18px',color: '#ffd700' }}> 🏆 Buy Pools</span>
-  
+
+              <span 
+                className="attentionBox animate"
+                style={{
+                  fontSize: "22px",
+                  fontWeight: "600",
+                  marginBottom: "8px",
+                  color: "black",
+                  background: "#ffd700",
+                  padding: "20px 50px",
+                  borderRadius: "15px",
+                }}
+              >
+                🏆 Buy Pools
+              </span>
+
                 {/* White separator line */}
                 <div 
                   style={{
@@ -1168,6 +1182,7 @@ const handleClaimTeamReward = async () => {
             </button>
           </div>
 
+         <br/>
          <br/>
          <br/>
          <br/>
