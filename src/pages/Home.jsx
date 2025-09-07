@@ -1163,7 +1163,7 @@ const handleClaimTeamReward = async () => {
                   background: "#ffd700",
                   padding: "20px 50px",
                   borderRadius: "15px",
-                  fontFamily: "monospace"
+                  fontFamily: "sans-serif"
                 }}
               >
                 🏆 BUY POOLS
