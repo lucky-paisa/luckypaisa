@@ -300,9 +300,28 @@ const unsubscribePurchases = onSnapshot(purchasesRef, async (querySnapshot) => {
 
   fetchPendingPlans();
 
+
+    // ✅ Listen for global admin announcements (last 24h only)
+  const globalRef = collection(db, "globalAnnouncements");
+  const unsubGlobal = onSnapshot(globalRef, (snap) => {
+    const now = Date.now();
+    const twentyFour = 24 * 60 * 60 * 1000;
+
+    const recent = snap.docs
+      .map(d => d.data())
+      .filter(d => now - d.timestamp?.toDate()?.getTime() <= twentyFour)
+      .map(d => d.message);
+
+    if (recent.length > 0) {
+      setAnnouncements(prev => [...new Set([...prev, ...recent])]);
+    }
+  });
+
+
   return () => {
   unsubscribe(); // user listener
   unsubscribePurchases(); // approved plans listener
+  if (unsubGlobal) unsubGlobal();
   };
 // ✅ cleanup listener
 }, [user]);

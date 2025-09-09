@@ -41,8 +41,8 @@ const AdminDashboard = () => {
   const [loading, setLoading] = useState(false);
   const [totalEarnings, setTotalEarnings] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
+  const [adminAnnouncement, setAdminAnnouncement] = useState("");
   const { logout } = useAuth();
-
 
   const { user } = useAuth();
     if (!user?.isAdmin) return <div style={{padding:16}}>Unauthorized – admin access only.</div>;
@@ -553,7 +553,7 @@ const handleProceed = async () => {
 
         <h1>🎉 Welcome Admin</h1>
         <button onClick={handleLogout} className="logout-btn">Logout</button>
-      </header>
+      </header>     
 
       <div style={{
             background: "#eeeeee2f",
@@ -561,6 +561,7 @@ const handleProceed = async () => {
             borderRadius: "8px",
             fontWeight: "bold",
             textAlign: "center",
+            placeSelf:"center",
             width:"90%"
           }}>
             <label style={{ fontWeight: "bold" }}>Total Earnings</label>
@@ -576,6 +577,39 @@ const handleProceed = async () => {
               Reset
             </button>
           </div>
+
+
+           <div style={{ margin: "20px auto", textAlign: "center" }}>
+  <input
+    type="text"
+    value={adminAnnouncement}
+    onChange={(e) => setAdminAnnouncement(e.target.value)}
+    placeholder="Type announcement..."
+    style={{
+      padding: "10px",
+      width: "60%",
+      borderRadius: "8px",
+      border: "1px solid #ccc",
+      marginRight: "10px"
+    }}
+    onKeyDown={async (e) => {
+      if (e.key === "Enter" && adminAnnouncement.trim()) {
+        try {
+          await addDoc(collection(db, "globalAnnouncements"), {
+            message: adminAnnouncement.trim(),
+            timestamp: serverTimestamp(),
+          });
+          setAdminAnnouncement("");
+          alert("✅ Announcement published!");
+        } catch (err) {
+          console.error("Error publishing announcement:", err);
+          alert("❌ Failed to publish announcement.");
+        }
+      }
+    }}
+  />
+</div>
+
 
       <div className="admin-buttons">
         
@@ -597,9 +631,12 @@ const handleProceed = async () => {
         
       </div>
 
-      <h2 style={{ marginTop: "20px" }}>🏆 Pools Management</h2>
+      <br/>
+      <br/>
+
+      <h2 style={{ marginTop: "20px", justifySelf:'center' }}>🏆 Pools</h2>
       
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", justifyContent:'center' }}>
       
         {poolsConfig.map(pool => (
           <button
@@ -613,13 +650,13 @@ const handleProceed = async () => {
       </div>
 
       {selectedPool && (
-        <div style={{ marginTop: "20px" }}>
+        <div style={{ marginTop: "20px", justifySelf:'center' }}>
           <input
             type="text"
             placeholder="Search by name or date..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            style={{ padding: "6px", marginBottom: "10px", width: "250px" }}
+            style={{ padding: "6px", marginBottom: "10px", width: "400px" }}
           />  
 
           <h3>{selectedPool.toUpperCase()} Users</h3>
