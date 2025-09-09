@@ -12,7 +12,14 @@ const poolsConfig = [
   { id: 1, price: 50, reward: 1 },
   { id: 2, price: 100, reward: 2.5 },
   { id: 3, price: 200, reward: 5.5 },
-  { id: 4, price: 300, reward: 8.5 }
+  { id: 4, price: 300, reward: 8.5 },
+  { id: 5, price: 500, reward: 15 },
+  { id: 6, price: 700, reward: 22 },
+  { id: 7, price: 1000, reward: 31 },
+  { id: 8, price: 2000, reward: 65 },
+  { id: 9, price: 3000, reward: 100 },
+  { id: 10, price: 5000, reward: 180 },
+  { id: 11, price: 10000, reward: 400 },
 ];
 
 
