@@ -656,7 +656,7 @@ const handleProceed = async () => {
             placeholder="Search by name or date..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            style={{ padding: "6px", marginBottom: "10px", width: "400px" }}
+            style={{ padding: "6px", marginBottom: "10px", width: "300px" }}
           />  
 
           <h3>{selectedPool.toUpperCase()} Users</h3>
