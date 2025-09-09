@@ -196,110 +196,130 @@ const AdminDashboard = () => {
     setLoading(false);
   };
 
-  const handleProceed = async () => {
-    if (!selectedWinner) return;
+const handleProceed = async () => {
+  if (!selectedWinner) return;
 
-    try {
-      setLoading(true);
-      const winnerUid = selectedWinner.uid;
-      const planId = selectedPlanId;
+  try {
+    setLoading(true);
+    const winnerUid = selectedWinner.uid;
+    const planId = selectedPlanId;
 
-      // 🔹 Fetch prizeAmount from Firestore (planSettings/plan_X)
-      const planRef = doc(db, "planSettings", `plan_${planId}`);
-      const planSnap = await getDoc(planRef);
+    // 🔹 Fetch prizeAmount from Firestore (planSettings/plan_X)
+    const planRef = doc(db, "planSettings", `plan_${planId}`);
+    const planSnap = await getDoc(planRef);
 
-      if (!planSnap.exists()) {
-        alert("❌ Plan settings not found.");
-        return;
-      }
-
-      const prize = Number(planSnap.data().prizeAmount); // ✅ read prizeAmount
-
-      // 1️⃣ Update winner's wallet balance
-      const winnerRef = doc(db, "users", winnerUid);
-      const winnerSnap = await getDoc(winnerRef);
-      if (winnerSnap.exists()) {
-        const currentBalance = Number(winnerSnap.data().wallet || 0);
-        await updateDoc(winnerRef, {
-          wallet: currentBalance + prize
-        });
-      } else {
-        await setDoc(winnerRef, {
-          wallet: prize,
-          createdAt: Timestamp.now()
-        });
-      }
-
-      // 2️⃣ Add announcements & update purchases
-      for (const user of approvedPlans) {
-        const userRef = doc(db, "users", user.uid);
-        const userSnap = await getDoc(userRef);
-
-        const updatedPurchases = (userSnap.data()?.purchases || []).filter(
-          (purchase) => purchase.planId !== planId
-        );
-
-        if (user.uid === winnerUid) {
-          const winnerAnnouncement = `🏆 Congrats! ${selectedWinner.userName} won the Lucky Draw for ${getPlanName(planId)} — $${prize}! 🎉`;
-
-          if (userSnap.exists()) {
-            await updateDoc(userRef, {
-              announcement: winnerAnnouncement,
-              announcementTimestamp: serverTimestamp(),
-              winnerAnnouncements: arrayUnion({
-                message: winnerAnnouncement,
-                timestamp: new Date()
-              }),
-              purchases: updatedPurchases,
-              planWins: arrayUnion({
-                planName: getPlanName(planId),
-                amount: prize,
-                time: new Date().toISOString()
-              })
-            });
-          } else {
-            await setDoc(userRef, {
-              announcement: winnerAnnouncement,
-              announcementTimestamp: serverTimestamp(),
-              winnerAnnouncements: [{
-                message: winnerAnnouncement,
-                timestamp: serverTimestamp()
-              }],
-              purchases: updatedPurchases,
-              createdAt: Timestamp.now(),
-              planWins: [{
-                planName: getPlanName(planId),
-                amount: prize,
-                time: new Date().toISOString()
-              }]
-            });
-          }
-        }
-      }
-
-      // 3️⃣ Delete purchase docs
-      const purchasesRef = collection(db, "purchases");
-      const purchasesQuery = query(purchasesRef, where("planId", "==", planId));
-      const purchasesSnap = await getDocs(purchasesQuery);
-      for (const purchaseDoc of purchasesSnap.docs) {
-        await deleteDoc(purchaseDoc.ref);
-      }
-
-      // 4️⃣ Restart countdown
-      await updateDoc(planRef, { startTime: Timestamp.now() });
-
-      // 5️⃣ Reset states
-      setSelectedWinner(null);
-      setCountdownFinishedPlans(prev => ({ ...prev, [`plan_${planId}`]: false }));
-      fetchMemberCounts();
-
-      console.log(`✅ Lucky draw finalized for plan ${planId}`);
-    } catch (error) {
-      console.error("Error in handleProceed:", error);
-    } finally {
-      setLoading(false);
+    if (!planSnap.exists()) {
+      alert("❌ Plan settings not found.");
+      return;
     }
-  };
+
+    const prize = Number(planSnap.data().prizeAmount); // ✅ read prizeAmount
+
+    // 1️⃣ Update winner's wallet balance
+    const winnerRef = doc(db, "users", winnerUid);
+    const winnerSnap = await getDoc(winnerRef);
+
+    if (winnerSnap.exists()) {
+      const currentBalance = Number(winnerSnap.data().wallet || 0);
+      await updateDoc(winnerRef, {
+        wallet: currentBalance + prize
+      });
+    } else {
+      await setDoc(winnerRef, {
+        wallet: prize,
+        createdAt: Timestamp.now()
+      });
+    }
+
+    // 2️⃣ Add announcements & update purchases for all participants
+    const winnerAnnouncement = `🏆 Congrats! ${selectedWinner.userName} won the Lucky Draw for ${getPlanName(planId)} — $${prize}! 🎉`;
+    const broadcastAnnouncement = `📣 ${selectedWinner.userName} has won 🏆, The Lucky Draw for ${getPlanName(planId)} - $${prize}`;
+
+    for (const user of approvedPlans) {
+      const userRef = doc(db, "users", user.uid);
+      const userSnap = await getDoc(userRef);
+
+      const updatedPurchases = (userSnap.data()?.purchases || []).filter(
+        (purchase) => purchase.planId !== planId
+      );
+
+      if (user.uid === winnerUid) {
+        // 🏆 Winner
+        if (userSnap.exists()) {
+          await updateDoc(userRef, {
+            announcement: winnerAnnouncement,
+            announcementTimestamp: serverTimestamp(),
+            winnerAnnouncements: arrayUnion({
+              message: winnerAnnouncement,
+              timestamp: new Date()
+            }),
+            purchases: updatedPurchases,
+            planWins: arrayUnion({
+              planName: getPlanName(planId),
+              amount: prize,
+              time: new Date().toISOString()
+            }),
+            alertMessage: winnerAnnouncement, // one-time popup for winner too
+            alertTimestamp: serverTimestamp()
+          });
+        } else {
+          await setDoc(userRef, {
+            announcement: winnerAnnouncement,
+            announcementTimestamp: serverTimestamp(),
+            winnerAnnouncements: [{
+              message: winnerAnnouncement,
+              timestamp: serverTimestamp()
+            }],
+            purchases: updatedPurchases,
+            createdAt: Timestamp.now(),
+            planWins: [{
+              planName: getPlanName(planId),
+              amount: prize,
+              time: new Date().toISOString()
+            }],
+            alertMessage: winnerAnnouncement,
+            alertTimestamp: serverTimestamp()
+          });
+        }
+      } else {
+        // ❌ Non-Winners
+        await updateDoc(userRef, {
+          announcement: broadcastAnnouncement,
+          announcementTimestamp: serverTimestamp(),
+          winnerAnnouncements: arrayUnion({
+            message: broadcastAnnouncement,
+            timestamp: new Date()
+          }),
+          purchases: updatedPurchases,
+          alertMessage: broadcastAnnouncement, // one-time alert modal
+          alertTimestamp: serverTimestamp()
+        });
+      }
+    }
+
+    // 3️⃣ Delete purchase docs
+    const purchasesRef = collection(db, "purchases");
+    const purchasesQuery = query(purchasesRef, where("planId", "==", planId));
+    const purchasesSnap = await getDocs(purchasesQuery);
+    for (const purchaseDoc of purchasesSnap.docs) {
+      await deleteDoc(purchaseDoc.ref);
+    }
+
+    // 4️⃣ Restart countdown
+    await updateDoc(planRef, { startTime: Timestamp.now() });
+
+    // 5️⃣ Reset states
+    setSelectedWinner(null);
+    setCountdownFinishedPlans(prev => ({ ...prev, [`plan_${planId}`]: false }));
+    fetchMemberCounts();
+
+    console.log(`✅ Lucky draw finalized for plan ${planId}`);
+  } catch (error) {
+    console.error("Error in handleProceed:", error);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const getPlanName = (planId) => {
     if (planId === 1) return 'Silver Plan';
