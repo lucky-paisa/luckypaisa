@@ -1151,15 +1151,29 @@ const handleClaimTeamReward = async () => {
                 justifyContent:'center',
                 padding:'8px'
               }}
-            >
+            >   
 
-              <span 
+                <span style={{ color:'#ffffff', fontWeight:'bold', fontSize:'20px' }}>Pool Balance</span>
+  
+              <span style={{ color:'#00e676', fontWeight:'bold', fontSize:'20px' }}>${poolWallet.toFixed(2)} </span>
+
+              {/* White separator line */}
+                <div 
+                  style={{
+                    width: "80%",        // adjust width as needed
+                    height: "1px", 
+                    backgroundColor: "white", 
+                    margin: "6px 0"
+                  }}
+                />
+
+                <span 
                 className="attentionBox animate"
                 style={{
                   fontSize: "22px",
-                  fontWeight: "900",
+                  fontWeight: "700",
                   marginBottom: "8px",
-                  color: "black",
+                  color: "#534700ff",
                   background: "#ffd700",
                   padding: "20px 50px",
                   borderRadius: "15px",
@@ -1169,19 +1183,13 @@ const handleClaimTeamReward = async () => {
                 🏆 BUY POOLS
               </span>
 
-                {/* White separator line */}
-                <div 
-                  style={{
-                    width: "80%",        // adjust width as needed
-                    height: "1px", 
-                    backgroundColor: "white", 
-                    margin: "6px 0"
-                  }}
-                />
-  
-              <span style={{ color:'#00e676', fontWeight:'bold', fontSize:'20px' }}>Pool Balance: ${poolWallet.toFixed(2)} </span>
+
             </button>
+
+            
           </div>
+
+          
 
          <br/>
          <br/>
