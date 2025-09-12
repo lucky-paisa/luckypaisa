@@ -1,27 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { signOut, onAuthStateChanged } from 'firebase/auth';
 import { auth, db } from '../firebase';
-import {collection, query, where, getDocs, arrayUnion, getDoc, orderBy, updateDoc, addDoc, doc, deleteDoc, increment, setDoc, onSnapshot, Timestamp, serverTimestamp} from 'firebase/firestore';
+import {collection, query, where, getDocs, arrayUnion, getDoc, updateDoc, addDoc, doc, deleteDoc, increment, setDoc, onSnapshot, Timestamp, serverTimestamp} from 'firebase/firestore';
 import './styles/AdminDashboard.css';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
-
 // Add after your existing imports
-const poolsConfig = [
-  { id: 1, price: 50, reward: 1 },
-  { id: 2, price: 100, reward: 2.5 },
-  { id: 3, price: 200, reward: 5.5 },
-  { id: 4, price: 300, reward: 8.5 },
-  { id: 5, price: 500, reward: 15 },
-  { id: 6, price: 700, reward: 22 },
-  { id: 7, price: 1000, reward: 31 },
-  { id: 8, price: 2000, reward: 65 },
-  { id: 9, price: 3000, reward: 100 },
-  { id: 10, price: 5000, reward: 180 },
-  { id: 11, price: 10000, reward: 400 },
-];
-
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -37,17 +22,14 @@ const AdminDashboard = () => {
   const [countdowns, setCountdowns] = useState({});
   const [selectedWinner, setSelectedWinner] = useState(null);
   const [countdownFinishedPlans, setCountdownFinishedPlans] = useState({});
-  const [planPrize, setPlanPrize] = useState(null);
+  const [setPlanPrize] = useState(null);
   // Deposit / Withdraw requests
   const [depositRequests, setDepositRequests] = useState([]);
   const [withdrawRequests, setWithdrawRequests] = useState([]);
   const [showDepositModal, setShowDepositModal] = useState(false);
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
-  const [poolsData, setPoolsData] = useState({});
-  const [selectedPool, setSelectedPool] = useState(null);
   const [loading, setLoading] = useState(false);
   const [totalEarnings, setTotalEarnings] = useState(0);
-  const [searchTerm, setSearchTerm] = useState("");
   const [adminAnnouncement, setAdminAnnouncement] = useState("");
   const { logout } = useAuth();
 
@@ -122,28 +104,13 @@ const AdminDashboard = () => {
     });
   });
 
-      // 🔹 Listen for pools data
-    const unsubscribes = [];
-    poolsConfig.forEach(pool => {
-      const poolRef = collection(db, "pools", `pool_${pool.id}`, "users");
-      const unsub = onSnapshot(poolRef, (snap) => {
-        const users = snap.docs.map(docSnap => ({ id: docSnap.id, ...docSnap.data() }));
-        setPoolsData(prev => ({
-          ...prev,
-          [`pool_${pool.id}`]: users
-        }));
-      });
-      unsubscribes.push(unsub);
-    });
-
-      // ✅ Cleanup all listeners
+  // ✅ Cleanup all listeners
     return () => {
       unsubscribe();                  // auth listener
-      unsubscribes.forEach(u => u()); // pools listeners
       if (unsubscribeDeposits) unsubscribeDeposits();     // deposits listener
       if (unsubscribeWithdrawals) unsubscribeWithdrawals(); // withdrawals listener
+      if (unsubscribeEarnings) unsubscribeEarnings(); // Earnings listener
     };
-
 
     return () => unsubscribe();
   }, []);
@@ -167,8 +134,6 @@ const AdminDashboard = () => {
     setPlan2Count(plan2);
     setPlan3Count(plan3);
   };
-
-
 
   const handleLogout = async () => {
     localStorage.removeItem('isAdmin');
@@ -494,8 +459,6 @@ const handleProceed = async () => {
           { merge: true }
         );
 
-
-
       } else {
         await setDoc(userRef, {
           wallet: 0,
@@ -517,7 +480,6 @@ const handleProceed = async () => {
       setLoading(false);
     }
   };
-
 
  const handleDropWithdraw = async (request) => {
   try {
@@ -638,58 +600,8 @@ const handleProceed = async () => {
         
       </div>
 
-      <br/>
-      <br/>
-
-      <h2 style={{ marginTop: "20px", justifySelf:'center' }}>🏆 Pools</h2>
       
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", justifyContent:'center' }}>
       
-        {poolsConfig.map(pool => (
-          <button
-            key={pool.id}
-            onClick={() => setSelectedPool(`pool_${pool.id}`)}
-            style={{ padding: "10px", borderRadius: "6px" }}
-          >
-            Pool {pool.id} ({poolsData[`pool_${pool.id}`]?.length || 0})
-          </button>
-        ))}
-      </div>
-
-      {selectedPool && (
-        <div style={{ marginTop: "20px", justifySelf:'center' }}>
-          <input
-            type="text"
-            placeholder="Search by name or date..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            style={{ padding: "6px", marginBottom: "10px", width: "300px" }}
-          />  
-
-          <h3>{selectedPool.toUpperCase()} Users</h3>
-          <table style={{ width: "100%", color: "#fff", borderCollapse: "collapse", marginTop: "10px", border:'dashed 1px white'}}>
-            <thead >
-              <tr>
-                <th>Name</th>
-                <th>Joined</th>
-              </tr>
-            </thead>
-            <tbody>
-              {(poolsData[selectedPool] || []).filter(user => {
-                  const nameMatch = user.userName?.toLowerCase().includes(searchTerm.toLowerCase());
-                  const dateStr = user.joinedAt?.toDate().toLocaleDateString() || "";
-                  const dateMatch = dateStr.includes(searchTerm);
-                  return nameMatch || dateMatch; }).map(user => (
-                <tr key={user.id}>
-                  <td>{user.userName}</td>
-                   <td>{user.joinedAt?.toDate().toLocaleString() || ""}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
       {/* Approved Plans Modal */}
       {showApprovedModal && (
         <div className="modal-overlay">

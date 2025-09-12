@@ -361,7 +361,7 @@
 
 /* ---------- Announcement bar (marquee) ---------- */
 .announcement-wrap {
-  width: 100%;
+  width: 97%;
   overflow: hidden;
   background: linear-gradient(90deg, #0f172a, #111827);
   color: #fff;
@@ -369,6 +369,7 @@
   padding: 10px 12px;
   box-shadow: 0 4px 12px rgba(2,6,23,0.6);
   margin: 8px 0;
+  place-self: center;
 }
 
 .marquee {

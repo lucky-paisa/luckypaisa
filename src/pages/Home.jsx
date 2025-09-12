@@ -1139,7 +1139,7 @@ const handleClaimTeamReward = async () => {
       <br/>
 
       <div className="row">
-        <div className="box" style={{display:'flex', background:'#324674ff'}}>
+        <div className="box" style={{display:'flex',  background: "linear-gradient(145deg, #0f172a, #1e293b)", boxShadow: "0 8px 30px rgba(0,0,0,0.45), 0 0 25px rgba(255, 215, 0, 0.15)"}}>
           
           <div style={{width:'50%'}}>
             <h4>Wallet balance</h4>
@@ -1147,9 +1147,29 @@ const handleClaimTeamReward = async () => {
             
           </div>
           
-          <div style={{display: 'grid', gap: '20px', marginTop: '8px', width:'50%', height:'30%' }}>
-            <button className="mainBtn" style={{width:'90%'}} onClick={() => setShowDepositModal(true)}>💱 Deposit</button>
-            <button className="mainBtn" style={{width:'90%'}} onClick={() => setShowWithdrawModal(true)}>📤 Cash out</button>
+          <div style={{display: 'grid', gap: '20px', marginTop: '8px', width:'60%', height:'30%' }}>
+            <button className="mainBtn" style={{
+                  background: "linear-gradient(90deg, #00ffe0, #0099ff)",
+                  color: "#000",
+                  fontWeight: "700",
+                  padding: "16px 30px",
+                  borderRadius: "14px",
+                  boxShadow: "0 0 18px rgba(0,255,255,0.6)",
+                  transition: "all 0.3s ease",
+                  width: "95%",
+                  justifyContent:'center',
+                }} onClick={() => setShowDepositModal(true)}>📥 Deposit</button>
+            <button className="mainBtn" style={{
+                  background: "linear-gradient(90deg, #00ffe0, #0099ff)",
+                  color: "#000",
+                  fontWeight: "700",
+                  padding: "16px 30px",
+                  borderRadius: "14px",
+                  boxShadow: "0 0 18px rgba(0,255,255,0.6)",
+                  transition: "all 0.3s ease",
+                  width: "95%",
+                  justifyContent:'center',
+                }} onClick={() => setShowWithdrawModal(true)}>📤 Cash out</button>
           </div>
         </div>
 
@@ -1210,6 +1230,7 @@ const handleClaimTeamReward = async () => {
 
           
 
+         <br/>
          <br/>
          <br/>
          <br/>
@@ -1911,7 +1932,7 @@ const handleClaimTeamReward = async () => {
                       : "4px solid gold"
                   }}>
                     <p>
-                      {item.type === "deposit" && `💰 Deposit — $${item.amount} with 50% bouns (${item.status})`}
+                      {item.type === "deposit" && `💰 Deposit — $${item.amount} + $${(item.amount)*0.5} bouns (${item.status})`}
                       {item.type === "withdraw" && `💸 Withdrawal — $${item.amount} (${item.status})`}
                       {item.type === "planWin" && `🏆 Won ${item.planName} — $${item.amount}`}
                       {item.type === "teamReward" && `👥 Team Reward — $${item.amount} (Team: ${item.teamCount})`}
