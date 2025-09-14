@@ -6,7 +6,7 @@ import './styles/AdminDashboard.css';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
-// Add after your existing imports
+const TEST_UIDS = ["zHDhPjcGWRTrWAazT5dFH5D7mn72", "dpVHIikDOkVXvsqTL6MfVCUOhdj2"];
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -336,12 +336,16 @@ const handleProceed = async () => {
         ...(isFirstDeposit ? { firstDepositDone: true } : {}), // mark after first
       });
 
-      // ✅ Update Admin Earnings
-      await setDoc(
-        doc(db, "adminData", "earnings"),
-        { total: increment(Number(request.amount)) },
-        { merge: true }
-      );
+
+      // ✅ Update Admin Earnings (skip test accounts)
+      if (!TEST_UIDS.includes(request.uid)) {
+        await setDoc(
+          doc(db, "adminData", "earnings"),
+          { total: increment(Number(request.amount)) },
+          { merge: true }
+        );
+        setTotalEarnings((prev) => prev + Number(request.amount));
+      }
 
       // 🎁 Referral Bonus (only if first deposit ever)
       if (isFirstDeposit && userData.referenceBy && userData.referenceBy !== "SELF") {
@@ -377,9 +381,6 @@ const handleProceed = async () => {
 
       // ✅ Remove request from depositRequests
       await deleteDoc(doc(db, "depositRequests", request.id));
-
-      // Update local UI
-      setTotalEarnings((prev) => prev + Number(request.amount));
       fetchDepositRequests();
 
       alert(`Deposit of $${request.amount} approved for ${userData.name || userData.email}`);
@@ -453,11 +454,15 @@ const handleProceed = async () => {
           })
 
         });
-         await setDoc(
-          doc(db, "adminData", "earnings"),
-          { total: increment(-Number(request.amount)) },
-          { merge: true }
-        );
+         // ✅ Deduct Admin Earnings (skip test accounts)
+        if (!TEST_UIDS.includes(request.uid)) {
+          await setDoc(
+            doc(db, "adminData", "earnings"),
+            { total: increment(-Number(request.amount)) },
+            { merge: true }
+          );
+          setTotalEarnings(prev => prev - Number(request.amount));
+        }
 
       } else {
         await setDoc(userRef, {
@@ -470,7 +475,6 @@ const handleProceed = async () => {
 
       await deleteDoc(doc(db, 'withdrawRequests', request.id));
       // Instantly update total earnings in UI
-      setTotalEarnings(prev => prev - Number(request.amount));
       fetchWithdrawRequests();
       alert(`Withdraw of $${request.amount} approved for ${request.userName}`);
     } catch (error) {
