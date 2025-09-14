@@ -1998,8 +1998,6 @@ const handleClaimTeamReward = async () => {
               value={depositAmount}
               onChange={(e) => setDepositAmount(e.target.value)}
             />
-
-            {/* Invite Link Section */}
             <div style={{ marginTop: "20px" }}>
               <label style={{ fontWeight: "bold", color: "#ffd700" }}>🔗 USDT (BEP-20) Wallet address</label>
               <div 
