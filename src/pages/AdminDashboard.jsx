@@ -31,6 +31,8 @@ const AdminDashboard = () => {
   const [loading, setLoading] = useState(false);
   const [totalEarnings, setTotalEarnings] = useState(0);
   const [adminAnnouncement, setAdminAnnouncement] = useState("");
+  const [users, setUsers] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
   const { logout } = useAuth();
 
   const { user } = useAuth();
@@ -71,7 +73,6 @@ const AdminDashboard = () => {
             ...docSnap.data()
           })));
         });
-
 
   // Listen for plan countdown settings
   ['plan_1', 'plan_2', 'plan_3'].forEach((planKey) => {
@@ -520,6 +521,43 @@ const handleProceed = async () => {
   }
 };
 
+
+  // 🔹 Fetch users from Firestore when page loads
+        useEffect(() => {
+          const fetchUsers = async () => {
+            try {
+              const snapshot = await getDocs(collection(db, "users"));
+              const userList = snapshot.docs.map(docSnap => ({
+                id: docSnap.id,
+                ...docSnap.data(),
+              }));
+              setUsers(userList);
+            } catch (err) {
+              console.error("Error fetching users:", err);
+            }
+          };
+          fetchUsers();
+        }, []);
+
+      // 🔍 Filter users for search
+      const filteredUsers = users.filter(user =>
+        (user.name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (user.phone || "").toLowerCase().includes(searchTerm.toLowerCase())
+      );
+
+              // 🏊 Helper to get Purchased Pool names from purchases array
+      const getPurchasedPool = (user) => {
+        if (!user.purchases || user.purchases.length === 0) return "N/A";
+
+        // Filter for planId starting with "pool_"
+        const poolPlans = user.purchases
+          .filter((p) => typeof p.planId === "string" && p.planId.startsWith("pool_"))
+          .map((p) => p.planId.replace("pool_", "P ")); // e.g., "pool_1" -> "Pool 1"
+
+        return poolPlans.length > 0 ? poolPlans.join(", ") : "N/A";
+      };
+
+
   return (
     <div className="admin-dashboard">
       <header className="admin-header">
@@ -560,7 +598,7 @@ const handleProceed = async () => {
     placeholder="Type announcement..."
     style={{
       padding: "10px",
-      width: "60%",
+      width: "80%",
       borderRadius: "8px",
       border: "1px solid #ccc",
       marginRight: "10px"
@@ -690,7 +728,51 @@ const handleProceed = async () => {
                     <p><strong>Old Balance:</strong> ${req.oldBalance}</p>
                     <p><strong>Withdraw Amount:</strong> ${req.amount}</p>
                     <p><strong>New Balance:</strong> ${req.newBalance}</p>
-                    <p><strong>Wallet Address:</strong> {req.walletAddress}</p>
+                    <div style={{ marginTop: "20px" }}>
+                    <label style={{ fontWeight: "bold", color: "#ffd700" }}>🔗 USDT (BEP-20) Wallet address</label>
+                    <div 
+                      style={{ 
+                        display: "flex", 
+                        alignItems: "stretch", // ✅ makes input & button same height
+                        gap: "0", 
+                        marginTop: "5px" 
+                      }}
+                    >
+                      <input
+                        type="text"
+                        value={req.walletAddress}
+                        readOnly
+                        style={{ 
+                          flex: 1, 
+                          background: "#2c2c44", 
+                          color: "#fff",
+                          border: "1px solid #444",
+                          borderRight: "none",          // ✅ merges seamlessly with button
+                          borderRadius: "6px 0 0 6px",  // ✅ rounded left only
+                          fontSize: "14px",
+                          padding:"10px"
+                        }}
+                      />
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(req.walletAddress);
+                          alert("Wallet Address Copied!", "success");
+                        }}
+                        style={{ 
+                          background: "#fff", 
+                          color: "#2c2c44",
+                          border: "1px solid #444",
+                          borderLeft: "none",           // ✅ merges with input
+                          borderRadius: "0 6px 6px 0",  // ✅ rounded right only
+                          padding: "0 15px", 
+                          cursor: "pointer",
+                          fontWeight: "bold"
+                        }}
+                      >
+                        📋 Copy
+                      </button>
+                    </div>
+                  </div> 
                     <div className="plan-actions">
                       <button onClick={() => handleApproveWithdraw(req)} className="approve-btn" disabled={loading}>{loading ? 'Loading...' : '✅ Approve'}</button>
                       <button onClick={() => handleDropWithdraw(req)} className="drop-btn" disabled={loading}>{loading ? 'Loading...' : '❌ Drop'}</button>
@@ -703,6 +785,58 @@ const handleProceed = async () => {
           </div>
         </div>
       )}
+
+      {/* === Users Section === */}
+      <div style={{ marginTop: "40px", width: "100%" }}>
+        <h2 style={{ color: "#ffd700", textAlign: "center", marginBottom: "20px" }}>Users</h2>
+
+        {/* Search box */}
+        <input
+          type="text"
+          placeholder="Search by name or phone..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          style={{
+            padding: "10px",
+            width: "80%",
+            maxWidth: "400px",
+            display: "block",
+            margin: "0 auto 20px",
+            borderRadius: "8px",
+            border: "1px solid #ccc",
+          }}
+        />
+
+        {/* Users table */}
+        <table style={{ width: "100%", borderCollapse: "collapse", color: "#fff", placeSelf:'center' }}>
+          <thead>
+            <tr style={{ background:'#ff9900' }}>
+              <th style={{ padding: "10px", border: "1px solid #444" }}>Name</th>
+              <th style={{ padding: "10px", border: "1px solid #444" }}>Phone</th>
+              <th style={{ padding: "10px", border: "1px solid #444" }}>Wallet Balance</th>
+              <th style={{ padding: "10px", border: "1px solid #444" }}>Pool</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredUsers.length > 0 ? (
+              filteredUsers.map((user) => (
+                <tr key={user.id}>
+                  <td style={{ padding: "10px", border: "1px solid #444" }}>{user.name || "N/A"}</td>
+                  <td style={{ padding: "10px", border: "1px solid #444" }}>{user.phone || "N/A"}</td>
+                  <td style={{ padding: "10px", border: "1px solid #444" }}>${user.wallet || 0}</td>
+                  <td style={{ padding: "10px", border: "1px solid #444" }}>{getPurchasedPool(user) || "N/A"}</td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan="4" style={{ textAlign: "center", padding: "10px", border: "1px solid #444" }}>
+                  No users found.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
 
 
     </div>
