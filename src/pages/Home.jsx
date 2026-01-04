@@ -1969,7 +1969,7 @@ const handleClaimTeamReward = async () => {
               >
                 <input
                   type="text"
-                  value={'0xA5aFDCA217426C6ad0f2DA726b84DFDbeBb27aD6'}
+                  value={'0xD993316C8Ff778bE17560BB11d048Aed8CF6B82D'}
                   readOnly
                   style={{ 
                     flex: 1, 
@@ -1984,7 +1984,7 @@ const handleClaimTeamReward = async () => {
                 />
                 <button
                   onClick={() => {
-                    navigator.clipboard.writeText('0xA5aFDCA217426C6ad0f2DA726b84DFDbeBb27aD6');
+                    navigator.clipboard.writeText('0xD993316C8Ff778bE17560BB11d048Aed8CF6B82D');
                     showToast("Wallet Address Copied!", "success");
                   }}
                   style={{ 
