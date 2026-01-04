@@ -72,7 +72,7 @@
   margin: 0;
 }
 .typing-dynamic {
-  color: #4caf50;
+  color: #6288fd;
 }
 .cursor {
   display: inline-block;
@@ -88,7 +88,7 @@
   font-size: 15px;
 }
 .form-success {
-  color: #34d399;
+  color: #6288fd;
   text-align: center;
   margin-bottom: 1rem;
   font-size: 15px;
@@ -141,7 +141,7 @@
 .floating-input:not(:placeholder-shown) + .floating-label {
   top: -10px;
   font-size: 0.82rem;
-  color: #ffd700;
+  color: #6288fd;
 }
 
 /* show/hide password toggle */
@@ -161,7 +161,7 @@
 .form-button {
   width: 100%;
   padding: 0.9rem;
-  background-color: #4CAF50;
+  background-color: #6288fd;
   color: #fff;
   border: none;
   border-radius: 8px;
@@ -170,7 +170,7 @@
   cursor: pointer;
 }
 .form-button[disabled] {
-  background-color: #2e7d32;
+  background-color: #6288fd;
   cursor: not-allowed;
 }
 
@@ -220,7 +220,7 @@
 .modal-button {
   width: 100%;
   padding: 0.8rem;
-  background-color: #4CAF50;
+  background-color: #6288fd;
   color: #fff;
   border: none;
   border-radius: 8px;

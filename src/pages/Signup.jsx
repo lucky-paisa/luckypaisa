@@ -111,9 +111,8 @@ const Signup = () => {
             <h2>⚠️Disclaimer & Terms</h2>
             <div className="modalContent">
               <p>
-                By signing up, you acknowledge that all activities within <span style={{color:'#ffc734'}}>
-                VEON App </span>, including deposits, withdrawals, pool participation, and
-                Lucky Draw entries, are carried out at your own choice and
+                By signing up, you acknowledge that all activities within <span style={{color:'#6288fd'}}>
+                NEXO App </span>, including deposits, withdrawals and pool participation, are carried out at your own choice and
                 responsibility. You confirm that you are acting voluntarily, at
                 your own risk, and accept full responsibility for any profits or
                 losses. The app and its operators hold no liability for any
@@ -121,7 +120,7 @@ const Signup = () => {
               </p>
               <p>
                 By checking the box below, you confirm that you have read,
-                understood, and agreed to this disclaimer, as well as the <span style={{color:'#ffc734'}}>
+                understood, and agreed to this disclaimer, as well as the <span style={{color:'#6288fd'}}>
                 Terms & Conditions</span>, in compliance with Pakistani law including PECA
                 2016.
               </p>
@@ -142,7 +141,7 @@ const Signup = () => {
                   marginTop: "15px",
                   padding: "10px 15px",
                   borderRadius: "8px",
-                  background: accepted ? "#4CAF50" : "#aaa",
+                  background: accepted ? "#6288fd" : "#aaa",
                   color: "#fff",
                   fontWeight: "bold",
                   cursor: accepted ? "pointer" : "not-allowed",

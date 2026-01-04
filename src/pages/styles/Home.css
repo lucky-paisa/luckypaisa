@@ -517,7 +517,7 @@
 }
 
 .attentionBox {
-  box-shadow: 0 0 20px #ffd700;
+  box-shadow: 0 0 20px #6288fd;
   display: inline-block;
   cursor: pointer;
   transition: transform 0.2s ease, box-shadow 0.3s ease;

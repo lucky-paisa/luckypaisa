@@ -1,6 +1,7 @@
 import './styles/Home.css';
 import Logo from '../assets/Text2.png';
 import Logo2 from '../assets/Logo.png';
+import Logo3 from '../assets/Text.png';
 import Icon from "../assets/P Icon.png";
 import L_Icon from "../assets/L Icon.png";
 import { useAuth } from '../context/AuthContext';
@@ -1073,7 +1074,7 @@ const handleClaimTeamReward = async () => {
           
           <button 
             className="mainBtn" 
-            style={{ borderRadius: '30px', background: '#324674' }} 
+            style={{ borderRadius: '30px', background: '#6288fd' }} 
             onClick={() => setShowProfile(true)}
           >
             <img 
@@ -1082,8 +1083,7 @@ const handleClaimTeamReward = async () => {
               style={{ width: '20px', height: '20px' }} 
             />
           </button>
-
-          <div style={{display:'flex'}}><img src={Logo2} style={{width:'25px'}} /> <img src={Logo} style={{width:'45px', marginTop:'10%'}} /></div>
+          <div style={{display:'flex'}}><img src={Logo3} style={{width:'55px'}} /> </div>
         </div>
         <button 
           style={{ borderRadius: '30px', background: 'transparent', border: 'none', cursor: 'pointer' }} 
@@ -1108,7 +1108,7 @@ const handleClaimTeamReward = async () => {
         marginTop:'2%',
       }}>
         <h1 style={{ 
-          color: "#ffd700", 
+          color: "#6288fd", 
           fontSize: "16px", 
           fontWeight: 200, 
           margin: 0 
@@ -1119,19 +1119,19 @@ const handleClaimTeamReward = async () => {
         <div className="announcement-wrap">
           <div className="marquee">
             <span>
-              {overrideAnnouncement ?? (announcements.length ? announcements[currentAnnouncementIndex] : '📣 No current winner announcements.')}
+              {overrideAnnouncement ?? (announcements.length ? announcements[currentAnnouncementIndex] : '📣 No current announcements.')}
             </span>
             <span>
-              {overrideAnnouncement ?? (announcements.length ? announcements[currentAnnouncementIndex] : '📣 No current winner announcements.')}
+              {overrideAnnouncement ?? (announcements.length ? announcements[currentAnnouncementIndex] : '📣 No current announcements.')}
             </span>
             <span>
-              {overrideAnnouncement ?? (announcements.length ? announcements[currentAnnouncementIndex] : '📣 No current winner announcements.')}
+              {overrideAnnouncement ?? (announcements.length ? announcements[currentAnnouncementIndex] : '📣 No current announcements.')}
             </span>
             <span>
-              {overrideAnnouncement ?? (announcements.length ? announcements[currentAnnouncementIndex] : '📣 No current winner announcements.')}
+              {overrideAnnouncement ?? (announcements.length ? announcements[currentAnnouncementIndex] : '📣 No current announcements.')}
             </span>
             <span>
-              {overrideAnnouncement ?? (announcements.length ? announcements[currentAnnouncementIndex] : '📣 No current winner announcements.')}
+              {overrideAnnouncement ?? (announcements.length ? announcements[currentAnnouncementIndex] : '📣 No current announcements.')}
             </span>
           </div>
         </div>
@@ -1149,8 +1149,8 @@ const handleClaimTeamReward = async () => {
           
           <div style={{display: 'grid', gap: '20px', marginTop: '8px', width:'60%', height:'30%' }}>
             <button className="mainBtn" style={{
-                  background: "linear-gradient(90deg, #00ffe0, #0099ff)",
-                  color: "#000",
+                  background: "linear-gradient(90deg, #6288fd, #0099ff)",
+                  color: "#ffffff",
                   fontWeight: "700",
                   padding: "16px 30px",
                   borderRadius: "14px",
@@ -1160,8 +1160,8 @@ const handleClaimTeamReward = async () => {
                   justifyContent:'center',
                 }} onClick={() => setShowDepositModal(true)}>📥 Deposit</button>
             <button className="mainBtn" style={{
-                  background: "linear-gradient(90deg, #00ffe0, #0099ff)",
-                  color: "#000",
+                  background: "linear-gradient(90deg, #6288fd, #0099ff)",
+                  color: "#ffffff",
                   fontWeight: "700",
                   padding: "16px 30px",
                   borderRadius: "14px",
@@ -1212,8 +1212,8 @@ const handleClaimTeamReward = async () => {
                   fontSize: "22px",
                   fontWeight: "700",
                   marginBottom: "8px",
-                  color: "#534700ff",
-                  background: "#ffd700",
+                  color: "#ffffff",
+                  background: "#6288fd",
                   padding: "20px 50px",
                   borderRadius: "15px",
                   
@@ -1403,7 +1403,7 @@ const handleClaimTeamReward = async () => {
                   )
                 }
                 style={{
-                  background: "linear-gradient(90deg, #ffd700, #ffae42)",
+                  background: "linear-gradient(90deg, #6288fd, #9db5fcff)",
                   color: "#000",
                   fontWeight: "700",
                   padding: "16px 70px",
@@ -1419,7 +1419,7 @@ const handleClaimTeamReward = async () => {
                 className="mainBtn"
                 onClick={() => setShowPools(true)} // ✅ open pools modal
                 style={{
-                  background: "linear-gradient(90deg, #00ffe0, #0099ff)",
+                  background: "linear-gradient(90deg, #6288fd, #0099ff)",
                   color: "#000",
                   fontWeight: "700",
                   padding: "16px 70px",
@@ -1435,68 +1435,12 @@ const handleClaimTeamReward = async () => {
         </div>
       </div>
 
-      <br/> 
-
-      <h2 className="animated-heading"> Buy our exclusive plans <br/> <span className="typing">✓ {animatedText}|</span></h2>
-      <br/> 
-      <div className="sliderContainer">
-        {plans.map((plan) => (
-        <div
-          key={plan.id}
-          className={`planCard plan-${plan.id}`}
-          onClick={() => {
-            if (pendingPlanIds.includes(plan.id)) {
-              showToast(`⏳ You already requested to buy ${planNameMap[plan.id]}... Will be approved within 12 hours ⏰.`, 'warning');
-
-              return;
-            }
-            const activePurchase = purchases.find(p => p.planId === plan.id);
-            if (activePurchase) {
-              if (!activePurchase.expiresAt || Date.now() < activePurchase.expiresAt) {
-                showToast(`⏳ You already purchased ${planNameMap[plan.id]}. Wait for the lucky draw to end.`, 'warning');
-
-                return;
-              }
-            }
-
-            setSelectedPlan(plan);
-            setShowBuyModal(true);
-          }}
-        >
-          <h3
-            className={`badge ${
-              plan.id === 1
-                ? "badge-silver"
-                : plan.id === 2
-                ? "badge-gold"
-                : "badge-diamond"
-            }`}
-          >
-            {plan.id === 1
-              ? "Silver Plan"
-              : plan.id === 2
-              ? "Gold Plan"
-              : "Diamond Plan"}
-          </h3>
-
-          <p>💵 Price: ${plan.price}</p>
-          <p>⏳ Duration: {plan.days} days</p>
-          <p>🏆 Reward: ${plan.reward}</p>
-          <br/>
-          <p>💸 Lucky Draw Countdown</p>
-          <p>⏳ {planCountdowns[`plan_${plan.id}`] || "Loading..."}</p>
-          <br/>
-          <br/>
-          <p style={{fontSize:'10px'}}>Once plan is bought, you will be added in lucky draw</p>
-        </div>
-
-        ))}
-      </div>
+       <br/> 
        <br/>
        <br/>
        <br/>
      
-          <p style={{textAlign:'center' , fontSize:'0.6rem'}}>© 2025 Veon. All rights reserved.</p> 
+          <p style={{textAlign:'center' , fontSize:'0.6rem'}}>© 2026 NEXO. All rights reserved.</p> 
       
           
       {/* Modals */}
@@ -1616,20 +1560,20 @@ const handleClaimTeamReward = async () => {
                   width: "90px", 
                   height: "90px", 
                   borderRadius: "50%", 
-                  background: "linear-gradient(135deg, #ffd700, #ffb400)", 
+                  background: "linear-gradient(135deg, #6288fd, #6288fd)", 
                   display: "flex", 
                   alignItems: "center", 
                   justifyContent: "center", 
                   fontSize: "36px", 
                   fontWeight: "bold", 
-                  color: "#000", 
+                  color: "#fff", 
                   margin: "0 auto 10px auto", 
                   boxShadow: "0 4px 12px rgba(0,0,0,0.5)"
                 }}
               >
                 {userData?.name ? userData.name.charAt(0).toUpperCase() : "👤"}
               </div>
-              <h2 style={{ margin: "10px 0 5px", color: "#ffd700" }}>
+              <h2 style={{ margin: "10px 0 5px", color: "#6288fd" }}>
                 {userData?.name || "Guest User"}
               </h2>
               <p style={{ color: "#bbb", fontSize: "14px" }}>
@@ -1663,7 +1607,7 @@ const handleClaimTeamReward = async () => {
 
             {/* Invite Link Section */}
             <div style={{ marginTop: "20px" }}>
-              <label style={{ fontWeight: "bold", color: "#ffd700" }}>🔗 Invite Link</label>
+              <label style={{ fontWeight: "bold", color: "#6288fd" }}>🔗 Invite Link</label>
               <div 
                 style={{ 
                   display: "flex", 
@@ -1693,7 +1637,7 @@ const handleClaimTeamReward = async () => {
                     showToast("Referral link copied!", "success");
                   }}
                   style={{ 
-                    background: "#2196F3", 
+                    background: "#6288fd", 
                     color: "#fff",
                     border: "1px solid #444",
                     borderLeft: "none", 
@@ -1728,7 +1672,7 @@ const handleClaimTeamReward = async () => {
                   style={{
                     fontSize: "20px",
                     fontWeight: "700",
-                    color: "#ffd700",
+                    color: "#6288fd",
                     marginBottom: "14px",
                   }}
                 >
@@ -1834,7 +1778,7 @@ const handleClaimTeamReward = async () => {
                     width: "100%",
                     padding: "10px",
                     borderRadius: "10px",
-                    background: "#324674",
+                    background: "#6288fd",
                     color: "#fff",
                     fontWeight: "bold",
                     marginBottom: "10px"
@@ -2105,7 +2049,7 @@ const handleClaimTeamReward = async () => {
                               marginTop: "10px",
                               width: "100%",
                               borderRadius: "10px",
-                              background: "#ffd700",
+                              background: "#a0b7ffff",
                               fontWeight: "bold"
                             }}
                             disabled
@@ -2120,7 +2064,7 @@ const handleClaimTeamReward = async () => {
                                 marginTop: "10px",
                                 width: "100%",
                                 borderRadius: "10px",
-                                background: "#ffd700",
+                                background: "#6288fd",
                                 color: "#000",
                                 fontWeight: "bold",
                               }}
