@@ -4,6 +4,7 @@ import Logo2 from '../assets/Logo.png';
 import Logo3 from '../assets/Text.png';
 import Icon from "../assets/P Icon.png";
 import L_Icon from "../assets/L Icon.png";
+import Down from "../assets/down.png";
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useState, useRef } from 'react';  
@@ -1602,8 +1603,22 @@ const handleClaimTeamReward = async () => {
                         : userData.referenceName || userData.referenceBy)
                     : "SELF"}
                 </span>
+                
               </div>
+              
             </div>
+
+            <a
+          href="/apk/Nexo.apk"
+          download
+          className="download-btn"
+        > Downlaod NEXO APP
+          <img 
+            src={Down} 
+            alt="Download icon" 
+            style={{ width: '20px', height: '20px' }} 
+          />
+        </a>
 
             {/* Invite Link Section */}
             <div style={{ marginTop: "20px" }}>
