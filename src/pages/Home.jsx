@@ -1038,9 +1038,16 @@ const handleClaimTeamReward = async () => {
   try {
     setLoadingTeamReward(true);
 
+    // 🔒 HARD SECURITY CHECK
+    if (teamCount < 20) {
+      showToast("❌ You need at least 20 team members to claim reward.", "error");
+      setLoadingTeamReward(false);
+      return;
+    }
+
     // 🎯 Reward calculation
-    const baseReward = 170;
-    const extraReward = teamCount > 35 ? (teamCount - 35) * 5 : 0;
+    const baseReward = 250;
+    const extraReward = teamCount > 20 ? (teamCount - 20) * 12.5 : 0;
     const totalReward = baseReward + extraReward;
 
     const userRef = doc(db, "users", user.uid);
@@ -1709,7 +1716,7 @@ const handleClaimTeamReward = async () => {
                   >
                     Loading...
                   </button>
-                ) : teamCount < 35 ? (
+                ) : teamCount < 20 ? (
                   <button
                     disabled
                     style={{
