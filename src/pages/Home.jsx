@@ -232,11 +232,11 @@ useEffect(() => {
         }
       } else {
         setAnnouncements([]);
-        showTemporaryAnnouncement('📣 No current winner announcements.');
+        showTemporaryAnnouncement('📣 No current announcements.');
       }
     } else {
       setAnnouncements([]);
-      showTemporaryAnnouncement('📣 No current winner announcements.');
+      showTemporaryAnnouncement('📣 No current announcements.');
     }
   setUserLoaded(true);
   });
@@ -780,16 +780,23 @@ const fetchDepositHistory = async () => {
 
 const pools = [
   { id: 1, price: 50, reward: 1 },
-  { id: 2, price: 100, reward: 2.5 },
-  { id: 3, price: 200, reward: 5.5 },
-  { id: 4, price: 300, reward: 8.5 },
-  { id: 5, price: 500, reward: 15 },
-  { id: 6, price: 700, reward: 22 },
-  { id: 7, price: 1000, reward: 31 },
-  { id: 8, price: 2000, reward: 65 },
-  { id: 9, price: 3000, reward: 100 }, 
-  { id: 10, price: 5000, reward: 180 },
-  { id: 11, price: 10000, reward: 400 },
+  { id: 2, price: 75, reward: 2 },
+  { id: 3, price: 100, reward: 2.5 },
+  { id: 4, price: 150, reward: 4 },
+  { id: 5, price: 200, reward: 5.5 },
+  { id: 6, price: 250, reward: 7 },
+  { id: 7, price: 300, reward: 8.5 },
+  { id: 8, price: 400, reward: 12 },
+  { id: 9, price: 500, reward: 15 },
+  { id: 10, price: 600, reward: 18 },
+  { id: 11, price: 700, reward: 22 },
+  { id: 12, price: 800, reward: 25 },
+  { id: 13, price: 900, reward: 28 },
+  { id: 14, price: 1000, reward: 31 },
+  { id: 15, price: 2000, reward: 65 },
+  { id: 16, price: 3000, reward: 100 }, 
+  { id: 17, price: 5000, reward: 180 },
+  { id: 18, price: 10000, reward: 400 },
 ];
 
 const handleBuyPool = async (pool) => {
@@ -1124,25 +1131,27 @@ const handleClaimTeamReward = async () => {
           🎉 Welcome {user?.name || "Guest"}
         </h1>
       </div>  
-        <div className="announcement-wrap">
-          <div className="marquee">
+      <div className="announcement-wrap">
+        <div className="marquee">
+          <div className="marquee-content">
             <span>
-              {overrideAnnouncement ?? (announcements.length ? announcements[currentAnnouncementIndex] : '📣 No current announcements.')}
+              {overrideAnnouncement ??
+                (announcements.length
+                  ? announcements[currentAnnouncementIndex]
+                  : "📣 No current announcements.")}
             </span>
+
+            {/* duplicate once */}
             <span>
-              {overrideAnnouncement ?? (announcements.length ? announcements[currentAnnouncementIndex] : '📣 No current announcements.')}
-            </span>
-            <span>
-              {overrideAnnouncement ?? (announcements.length ? announcements[currentAnnouncementIndex] : '📣 No current announcements.')}
-            </span>
-            <span>
-              {overrideAnnouncement ?? (announcements.length ? announcements[currentAnnouncementIndex] : '📣 No current announcements.')}
-            </span>
-            <span>
-              {overrideAnnouncement ?? (announcements.length ? announcements[currentAnnouncementIndex] : '📣 No current announcements.')}
+              {overrideAnnouncement ??
+                (announcements.length
+                  ? announcements[currentAnnouncementIndex]
+                  : "📣 No current announcements.")}
             </span>
           </div>
         </div>
+      </div>
+
 
       <br/>
 

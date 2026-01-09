@@ -372,24 +372,34 @@
   place-self: center;
 }
 
+/* container */
 .marquee {
-  display: inline-block;
-  white-space: nowrap;
-  will-change: transform;
-  animation: marquee 50s linear infinite;
+  overflow: hidden;
+  position: relative;
 }
 
-.marquee span {
-  display: inline-block;
-  padding-right: 80px; /* gap between repeats */
+/* moving content */
+.marquee-content {
+  display: flex;
+  width: max-content;
+  animation: marquee-scroll 15s linear infinite;
+}
+
+.marquee-content span {
+  white-space: nowrap;
+  padding-right: 60px; /* 👈 gap between loops (≈1 sec feel) */
   font-weight: 600;
   font-size: 16px;
 }
 
-/* animation: from right (100%) to left (-100%) */
-@keyframes marquee {
-  0% { transform: translateX(100%); }
-  100% { transform: translateX(-100%); }
+/* move only HALF (because duplicated) */
+@keyframes marquee-scroll {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
 }
 
 /* ---------- Alert modal / overlay ---------- */
