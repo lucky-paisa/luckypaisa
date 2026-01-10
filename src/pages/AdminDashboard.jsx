@@ -540,7 +540,9 @@ const handleProceed = async () => {
         }, []);
 
       // 🔍 Filter users for search
-      const filteredUsers = users.filter(user =>
+      const filteredUsers = users
+      .filter(user => user.email !== "hammadiqbalk2000@gmail.com")
+      .filter(user =>
         (user.name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
         (user.phone || "").toLowerCase().includes(searchTerm.toLowerCase())
       );
@@ -811,6 +813,7 @@ const handleProceed = async () => {
         <table style={{ width: "100%", borderCollapse: "collapse", color: "#fff", placeSelf:'center' }}>
           <thead>
             <tr style={{ background:'#ff9900' }}>
+              <th style={{ padding: "10px", border: "1px solid #444" }}>#</th>
               <th style={{ padding: "10px", border: "1px solid #444" }}>Name</th>
               <th style={{ padding: "10px", border: "1px solid #444" }}>Phone</th>
               <th style={{ padding: "10px", border: "1px solid #444" }}>Wallet Balance</th>
@@ -819,8 +822,9 @@ const handleProceed = async () => {
           </thead>
           <tbody>
             {filteredUsers.length > 0 ? (
-              filteredUsers.map((user) => (
+              filteredUsers.map((user, index) => (
                 <tr key={user.id}>
+                  <td style={{ padding: "10px", border: "1px solid #444", textAlign: "center" }}> {index + 1} </td>
                   <td style={{ padding: "10px", border: "1px solid #444" }}>{user.name || "N/A"}</td>
                   <td style={{ padding: "10px", border: "1px solid #444" }}>{user.phone || "N/A"}</td>
                   <td style={{ padding: "10px", border: "1px solid #444" }}>${user.wallet || 0}</td>
