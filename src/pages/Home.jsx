@@ -10,6 +10,7 @@ import { useNavigate } from 'react-router-dom';
 import { useEffect, useState, useRef } from 'react';  
 import { sendPasswordResetEmail } from "firebase/auth";
 import { useMemo } from "react";
+import { Link } from "react-router-dom";
 import {
   doc,
   updateDoc,
@@ -1457,7 +1458,17 @@ const handleClaimTeamReward = async () => {
        <br/>
        <br/>
      
-          <p style={{textAlign:'center' , fontSize:'0.6rem'}}>© 2026 NEXO. All rights reserved.</p> 
+          <p style={{textAlign:'center' , fontSize:'0.6rem'}}>© 2026 NEXO. All rights reserved. <Link 
+                  to="/terms"
+                  style={{
+                    color: "#6288fd",
+                    textDecoration: "underline",
+                    fontWeight: "600",
+                    cursor: "pointer",
+                  }}
+                >
+                  Terms & Conditions
+                </Link></p> 
       
           
       {/* Modals */}

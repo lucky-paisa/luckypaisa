@@ -1,0 +1,55 @@
+.terms-container {
+  max-width: auto;
+  margin: auto;
+  padding: 24px;
+  background: #0f172a;
+  color: #e5e7eb;
+  line-height: 1.6;
+}
+
+h1, h2, h3 {
+  color: #6288fd;
+}
+
+.updated {
+  font-size: 13px;
+  opacity: 0.7;
+  margin-bottom: 20px;
+}
+
+section {
+  margin-bottom: 20px;
+}
+
+.warning {
+  background: #1f2933;
+  padding: 16px;
+  border-left: 4px solid #f87171;
+  border-radius: 8px;
+}
+
+.accept-box {
+  margin: 20px 0;
+}
+
+.accept-box input {
+  margin-right: 10px;
+}
+
+.continue-btn {
+  width: 100%;
+  padding: 14px;
+  font-size: 16px;
+  font-weight: 700;
+  border: none;
+  border-radius: 10px;
+  background: #6288fd;
+  color: #000;
+  cursor: pointer;
+}
+
+.continue-btn:disabled {
+  background: #334155;
+  color: #94a3b8;
+  cursor: not-allowed;
+}

@@ -7,7 +7,7 @@ import AdminRoute from "./routes/AdminRoute";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import AdminDashboard from './pages/AdminDashboard';
 import ResetPassword from "./pages/ResetPassword";
-
+import Terms from "./pages/Terms";
 
 function App() {
   useEffect(() => {
@@ -26,6 +26,7 @@ function App() {
         <Route path="/home" element={<ProtectedRoute> <Home /> </ProtectedRoute> } />
         <Route path="/admin" element={ <AdminRoute> <AdminDashboard /> </AdminRoute> } />
         <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/terms" element={<Terms />} />
       </Routes>
     </div>
   );
