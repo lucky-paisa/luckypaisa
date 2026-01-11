@@ -5,6 +5,7 @@ import {collection, query, where, getDocs, arrayUnion, getDoc, updateDoc, addDoc
 import './styles/AdminDashboard.css';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import reset from '../assets/undo.png';
 
 const TEST_UIDS = ["zHDhPjcGWRTrWAazT5dFH5D7mn72", "dpVHIikDOkVXvsqTL6MfVCUOhdj2"];
 
@@ -569,7 +570,7 @@ const handleProceed = async () => {
       </header>     
 
       <div style={{
-            background: "#eeeeee2f",
+            background: "#6288fd",
             padding: "8px 12px",
             borderRadius: "8px",
             fontWeight: "bold",
@@ -582,12 +583,16 @@ const handleProceed = async () => {
             ${totalEarnings.toFixed(2)}
             <br />
             <button
-              style={{ marginTop: "5px", padding: "4px 8px", fontSize: "12px" }}
+              style={{ marginTop: "5px", padding: "5px 70px", fontSize: "18px", backgroundColor:'white', border:'solid 3px #fd747d', borderRadius:'30px' }}
               onClick={async () => {
                 await updateDoc(doc(db, "adminData", "earnings"), { total: 0 });
               }}
             >
-              Reset
+              <img 
+                          src={reset} 
+                          alt="reset icon" 
+                          style={{ width: '35px', height: '35px' }} 
+                        />
             </button>
           </div>
 
@@ -731,7 +736,7 @@ const handleProceed = async () => {
                     <p><strong>Withdraw Amount:</strong> ${req.amount}</p>
                     <p><strong>New Balance:</strong> ${req.newBalance}</p>
                     <div style={{ marginTop: "20px" }}>
-                    <label style={{ fontWeight: "bold", color: "#ffd700" }}>🔗 USDT (BEP-20) Wallet address</label>
+                    <label style={{ fontWeight: "bold", color: "#6288fd" }}>🔗 USDT (BEP-20) Wallet address</label>
                     <div 
                       style={{ 
                         display: "flex", 
@@ -790,7 +795,7 @@ const handleProceed = async () => {
 
       {/* === Users Section === */}
       <div style={{ marginTop: "40px", width: "100%" }}>
-        <h2 style={{ color: "#ffd700", textAlign: "center", marginBottom: "20px" }}>Users</h2>
+        <h2 style={{ color: "#6288fd", textAlign: "center", marginBottom: "20px" }}>Users</h2>
 
         {/* Search box */}
         <input
@@ -812,7 +817,7 @@ const handleProceed = async () => {
         {/* Users table */}
         <table style={{ width: "100%", borderCollapse: "collapse", color: "#fff", placeSelf:'center' }}>
           <thead>
-            <tr style={{ background:'#ff9900' }}>
+            <tr style={{ background:'#405bab' }}>
               <th style={{ padding: "10px", border: "1px solid #444" }}>#</th>
               <th style={{ padding: "10px", border: "1px solid #444" }}>Name</th>
               <th style={{ padding: "10px", border: "1px solid #444" }}>Phone</th>
@@ -824,16 +829,16 @@ const handleProceed = async () => {
             {filteredUsers.length > 0 ? (
               filteredUsers.map((user, index) => (
                 <tr key={user.id}>
-                  <td style={{ padding: "10px", border: "1px solid #444", textAlign: "center" }}> {index + 1} </td>
-                  <td style={{ padding: "10px", border: "1px solid #444" }}>{user.name || "N/A"}</td>
-                  <td style={{ padding: "10px", border: "1px solid #444" }}>{user.phone || "N/A"}</td>
-                  <td style={{ padding: "10px", border: "1px solid #444" }}>${user.wallet || 0}</td>
-                  <td style={{ padding: "10px", border: "1px solid #444" }}>{getPurchasedPool(user) || "N/A"}</td>
+                  <td style={{ padding: "10px", border: "1px solid #444", textAlign: "center", backgroundColor:'#6288fd' }}> {index + 1} </td>
+                  <td style={{ padding: "10px", border: "1px solid #444" , backgroundColor:'#6288fd'}}>{user.name || "N/A"}</td>
+                  <td style={{ padding: "10px", border: "1px solid #444" , backgroundColor:'#6288fd'}}>{user.phone || "N/A"}</td>
+                  <td style={{ padding: "10px", border: "1px solid #444" , backgroundColor:'#6288fd'}}>${user.wallet || 0}</td>
+                  <td style={{ padding: "10px", border: "1px solid #444" , backgroundColor:'#6288fd'}}>{getPurchasedPool(user) || "N/A"}</td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan="4" style={{ textAlign: "center", padding: "10px", border: "1px solid #444" }}>
+                <td colSpan="4" style={{ textAlign: "center", padding: "10px", border: "1px solid #444" , backgroundColor:'#6288fd' }}>
                   No users found.
                 </td>
               </tr>

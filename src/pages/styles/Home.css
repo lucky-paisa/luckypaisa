@@ -4,8 +4,8 @@
   overflow-y: auto;
   overflow-x: hidden;
   padding: 1rem;
-  /*background: linear-gradient(to right, #0f2027, #203a43, #2c5364); */
-  background: #000000;
+  background: linear-gradient(to right, #0f2027, #203a43, #2c5364); 
+  /*background: hsl(222, 37%, 35%); */
   color: white;
   box-sizing: border-box;
 }
