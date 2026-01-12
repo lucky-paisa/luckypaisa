@@ -39,7 +39,7 @@ color: white;
   background-color: #6288fd;
   border: 2px solid white;
   color: #fff;
-  padding: 10px 16px;
+  padding: 10px 50px;
   border-radius: 8px;
   font-weight: bold;
   cursor: pointer;
@@ -72,7 +72,8 @@ color: white;
 }
 
 .modal-content {
-  background-color: #222;
+  /* background-color: #222; */
+  background: linear-gradient(to bottom right, #f2f2f2, #6288fd,  #aac0ff); 
   color: #fff;
   padding: 30px;
   border-radius: 10px;
@@ -82,7 +83,9 @@ color: white;
   max-width: 800px;
   position: relative;
 }
-
+.modal-content h2{
+  color: white;
+}
 .close-btn {
   position: absolute;
   top: 15px;

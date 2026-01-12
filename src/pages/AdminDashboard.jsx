@@ -651,7 +651,7 @@ const handleProceed = async () => {
         <button className="pending-btn" onClick={() => setShowWithdrawModal(true)}>
           Withdraw Requests ({withdrawRequests.length})
         </button>
-        <button className="plan-btn" onClick={() => fetchApprovedPlans(1)}>
+        {/* <button className="plan-btn" onClick={() => fetchApprovedPlans(1)}>
           Plan 1 Members ({plan1Count}) ⏳ {countdowns.plan_1 || 'Loading...'}
         </button>
         <button className="plan-btn" onClick={() => fetchApprovedPlans(2)}>
@@ -659,7 +659,7 @@ const handleProceed = async () => {
         </button>
         <button className="plan-btn" onClick={() => fetchApprovedPlans(3)}>
           Plan 3 Members ({plan3Count}) ⏳ {countdowns.plan_3 || 'Loading...'}
-        </button>
+        </button> */}
         
       </div>
 
