@@ -6,6 +6,7 @@ import './styles/AdminDashboard.css';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import reset from '../assets/undo.png';
+import L_Icon from "../assets/L Icon.png";
 
 const TEST_UIDS = ["zHDhPjcGWRTrWAazT5dFH5D7mn72", "dpVHIikDOkVXvsqTL6MfVCUOhdj2"];
 
@@ -563,11 +564,15 @@ const handleProceed = async () => {
 
   return (
     <div className="admin-dashboard">
-      <header className="admin-header">
 
-        <h1>🎉 Welcome Admin</h1>
-        <button onClick={handleLogout} className="logout-btn">Logout</button>
-      </header>     
+      <button onClick={handleLogout} className="logout-btn">
+        
+          <img 
+            src={L_Icon} 
+            alt="Logout Icon" 
+            style={{ width: '20px', height: '20px'}} 
+          />
+      </button>
 
       <div style={{
             background: "#6288fd",
@@ -576,8 +581,14 @@ const handleProceed = async () => {
             fontWeight: "bold",
             textAlign: "center",
             placeSelf:"center",
-            width:"90%"
+            width:"90%",
+            border:'solid 1px white',
           }}>
+            <header className="admin-header">
+
+              <h1>🎉 Welcome Admin</h1>
+              
+            </header>  
             <label style={{ fontWeight: "bold" }}>Total Earnings</label>
             <br />
             ${totalEarnings.toFixed(2)}
@@ -594,39 +605,41 @@ const handleProceed = async () => {
                           style={{ width: '35px', height: '35px' }} 
                         />
             </button>
+            
+            <div style={{ margin: "20px auto", textAlign: "center" }}>
+            <input
+              type="text"
+              value={adminAnnouncement}
+              onChange={(e) => setAdminAnnouncement(e.target.value)}
+              placeholder="Type announcement..."
+              style={{
+                padding: "10px",
+                width: "80%",
+                borderRadius: "8px",
+                border: "1px solid #ccc",
+                marginRight: "10px"
+              }}
+              onKeyDown={async (e) => {
+                if (e.key === "Enter" && adminAnnouncement.trim()) {
+                  try {
+                    await addDoc(collection(db, "globalAnnouncements"), {
+                      message: adminAnnouncement.trim(),
+                      timestamp: serverTimestamp(),
+                    });
+                    setAdminAnnouncement("");
+                    alert("✅ Announcement published!");
+                  } catch (err) {
+                    console.error("Error publishing announcement:", err);
+                    alert("❌ Failed to publish announcement.");
+                  }
+                }
+              }}
+            />
+          </div>
           </div>
 
 
-           <div style={{ margin: "20px auto", textAlign: "center" }}>
-  <input
-    type="text"
-    value={adminAnnouncement}
-    onChange={(e) => setAdminAnnouncement(e.target.value)}
-    placeholder="Type announcement..."
-    style={{
-      padding: "10px",
-      width: "80%",
-      borderRadius: "8px",
-      border: "1px solid #ccc",
-      marginRight: "10px"
-    }}
-    onKeyDown={async (e) => {
-      if (e.key === "Enter" && adminAnnouncement.trim()) {
-        try {
-          await addDoc(collection(db, "globalAnnouncements"), {
-            message: adminAnnouncement.trim(),
-            timestamp: serverTimestamp(),
-          });
-          setAdminAnnouncement("");
-          alert("✅ Announcement published!");
-        } catch (err) {
-          console.error("Error publishing announcement:", err);
-          alert("❌ Failed to publish announcement.");
-        }
-      }
-    }}
-  />
-</div>
+
 
 
       <div className="admin-buttons">

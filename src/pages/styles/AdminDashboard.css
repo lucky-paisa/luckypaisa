@@ -1,5 +1,6 @@
 .admin-dashboard {
-  background-color: #f2f2f2;
+  background: linear-gradient(to bottom right, #f2f2f2, #6288fd,  #aac0ff); 
+ /* background-color: #aac0ff; */
   color: #fff;
   min-height: 100vh;
   padding: 20px;
@@ -11,15 +12,18 @@
   justify-content: space-between;
   align-items: center;
 }
+.admin-header h1{
+color: white;
+}
 
-.logout-btn,
-.login-btn {
-  background-color: #e50914;
-  color: #fff;
+.logout-btn{
+  background: none;
   border: none;
   padding: 10px 16px;
   border-radius: 5px;
   cursor: pointer;
+  margin-left: 92%;
+  margin-bottom: 10px;
 }
 
 .admin-buttons {
