@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import reset from '../assets/undo.png';
 import L_Icon from "../assets/L Icon.png";
+import Logo from '../assets/Logo.png';
 
 const TEST_UIDS = ["zHDhPjcGWRTrWAazT5dFH5D7mn72", "dpVHIikDOkVXvsqTL6MfVCUOhdj2"];
 
@@ -565,14 +566,18 @@ const handleProceed = async () => {
   return (
     <div className="admin-dashboard">
 
-      <button onClick={handleLogout} className="logout-btn">
-        
-          <img 
-            src={L_Icon} 
-            alt="Logout Icon" 
-            style={{ width: '20px', height: '20px'}} 
-          />
-      </button>
+      <div style={{display:'flex'}}><img src={Logo} style={{width:'35px', height: '35px'}} /> 
+        <button onClick={handleLogout} className="logout-btn">
+          
+            <img 
+              src={L_Icon} 
+              alt="Logout Icon" 
+              style={{ width: '20px', height: '20px'}} 
+            />
+        </button>
+      </div>
+
+
 
       <div style={{
             background: "#6288fd",
@@ -637,10 +642,6 @@ const handleProceed = async () => {
             />
           </div>
           </div>
-
-
-
-
 
       <div className="admin-buttons">
         
@@ -808,7 +809,7 @@ const handleProceed = async () => {
 
       {/* === Users Section === */}
       <div style={{ marginTop: "40px", width: "100%" }}>
-        <h2 style={{ color: "#6288fd", textAlign: "center", marginBottom: "20px" }}>Users</h2>
+        <h2 style={{ color: "#ffffff", textAlign: "center", marginBottom: "20px" }}>Users</h2>
 
         {/* Search box */}
         <input
@@ -831,27 +832,27 @@ const handleProceed = async () => {
         <table style={{ width: "100%", borderCollapse: "collapse", color: "#fff", placeSelf:'center' }}>
           <thead>
             <tr style={{ background:'#405bab' }}>
-              <th style={{ padding: "10px", border: "1px solid #444" }}>#</th>
-              <th style={{ padding: "10px", border: "1px solid #444" }}>Name</th>
-              <th style={{ padding: "10px", border: "1px solid #444" }}>Phone</th>
-              <th style={{ padding: "10px", border: "1px solid #444" }}>Wallet Balance</th>
-              <th style={{ padding: "10px", border: "1px solid #444" }}>Pool</th>
+              <th style={{ padding: "10px", border: "1px solid #fff" }}>#</th>
+              <th style={{ padding: "10px", border: "1px solid #fff" }}>Name</th>
+              <th style={{ padding: "10px", border: "1px solid #fff" }}>Phone</th>
+              <th style={{ padding: "10px", border: "1px solid #fff" }}>Wallet Balance</th>
+              <th style={{ padding: "10px", border: "1px solid #fff" }}>Pool</th>
             </tr>
           </thead>
           <tbody>
             {filteredUsers.length > 0 ? (
               filteredUsers.map((user, index) => (
                 <tr key={user.id}>
-                  <td style={{ padding: "10px", border: "1px solid #444", textAlign: "center", backgroundColor:'#6288fd' }}> {index + 1} </td>
-                  <td style={{ padding: "10px", border: "1px solid #444" , backgroundColor:'#6288fd'}}>{user.name || "N/A"}</td>
-                  <td style={{ padding: "10px", border: "1px solid #444" , backgroundColor:'#6288fd'}}>{user.phone || "N/A"}</td>
-                  <td style={{ padding: "10px", border: "1px solid #444" , backgroundColor:'#6288fd'}}>${user.wallet || 0}</td>
-                  <td style={{ padding: "10px", border: "1px solid #444" , backgroundColor:'#6288fd'}}>{getPurchasedPool(user) || "N/A"}</td>
+                  <td style={{ padding: "10px", border: "1px solid #fff", textAlign: "center", backgroundColor:'#6288fd' }}> {index + 1} </td>
+                  <td style={{ padding: "10px", border: "1px solid #fff" , backgroundColor:'#6288fd'}}>{user.name || "N/A"}</td>
+                  <td style={{ padding: "10px", border: "1px solid #fff" , backgroundColor:'#6288fd'}}>{user.phone || "N/A"}</td>
+                  <td style={{ padding: "10px", border: "1px solid #fff" , backgroundColor:'#6288fd'}}>${user.wallet || 0}</td>
+                  <td style={{ padding: "10px", border: "1px solid #fff" , backgroundColor:'#6288fd'}}>{getPurchasedPool(user) || "N/A"}</td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan="4" style={{ textAlign: "center", padding: "10px", border: "1px solid #444" , backgroundColor:'#6288fd' }}>
+                <td colSpan="5" style={{ textAlign: "center", padding: "10px", border: "1px solid #fff" , backgroundColor:'#6288fd' }}>
                   No users found.
                 </td>
               </tr>
