@@ -829,7 +829,7 @@ const handleProceed = async () => {
         />
 
         {/* Users table */}
-        <table style={{ width: "100%", borderCollapse: "collapse", color: "#fff", placeSelf:'center' }}>
+        <table style={{ width: "auto", borderCollapse: "collapse", color: "#fff", placeSelf:'center', fontSize:'10px' }}>
           <thead>
             <tr style={{ background:'#405bab' }}>
               <th style={{ padding: "10px", border: "1px solid #fff" }}>#</th>
